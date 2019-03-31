@@ -1,0 +1,6 @@
+framework module XRPKit {
+  umbrella header "XRPKit-umbrella.h"
+
+  export *
+  module * { export * }
+}
