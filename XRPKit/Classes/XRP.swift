@@ -45,6 +45,32 @@ public class XRP {
         return p.future
     }
     
+    @available(iOS 10.0, *)
+    public static func getBalance(account: String) -> Future<Int> {
+        let p = Promise<Int>()
+        let parameters: [String: Any] = [
+            "method" : "account_info",
+            "params": [
+                [
+                    "account" : account
+                ]
+            ]
+        ]
+        Alamofire.request(url, method:.post, parameters: parameters, encoding: JSONEncoding.default)
+            .responseJSON { response in
+                response.result.ifSuccess {
+                    if let result = response.result.value {
+                        let JSON = result as! NSDictionary
+                        let info = JSON["result"] as! NSDictionary
+                        let account = info["account_data"] as! NSDictionary
+                        let balance = account["Balance"] as! String
+                        p.completeWithSuccess(Int(balance)!)
+                    }
+                }
+        }
+        return p.future
+    }
+    
     private static func txHistURLFor(account: String) -> String {
         return "https://data.ripple.com/v2/accounts/\(account)/transactions?type=Payment&result=tesSUCCESS&limit=20"
     }
