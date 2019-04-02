@@ -10,7 +10,7 @@ import Alamofire
 import FutureKit
 
 public class XRP {
-    private static let url = "https://s2.ripple.com:51234"
+    private static let url = "https://s.altnet.rippletest.net:51234"//"https://s2.ripple.com:51234"
     private init() {}
     
     @available(iOS 10.0, *)
@@ -77,7 +77,40 @@ public class XRP {
         return p.future
     }
     
+    public static func currentLedgerInfo() -> Future<CurrentLedgerInfo> {
+        let p = Promise<CurrentLedgerInfo>()
+        let parameters: [String: Any] = [
+            "method" : "fee"
+        ]
+        // abstract this
+        Alamofire.request(url, method:.post, parameters: parameters, encoding: JSONEncoding.default)
+            .responseJSON { response in
+                response.result.ifSuccess {
+                    if let result = response.result.value {
+                        let JSON = result as! NSDictionary
+                        let info = JSON["result"] as! NSDictionary
+                        let drops = info["drops"] as! NSDictionary
+                        let min = drops["minimum_fee"] as! String
+                        let max = drops["median_fee"] as! String
+                        let ledger = info["ledger_current_index"] as! Int
+                        p.completeWithSuccess(CurrentLedgerInfo(index: ledger, minFee: Int(min)!, maxFee: Int(max)!))
+                    }
+                }
+        }
+        return p.future
+    }
+    
     private static func txHistURLFor(account: String) -> String {
         return "https://data.ripple.com/v2/accounts/\(account)/transactions?type=Payment&result=tesSUCCESS&limit=20"
     }
+}
+
+public func drops2XRP(_ value: Int) -> String {
+    let drops = value%1000000
+    let xrp = value/1000000
+    let length = String(drops).count
+    let _leadingZeros = 6 - length
+    let leadingZeros: [Character] = Array(repeating: "0", count: _leadingZeros)
+    let ret = String(xrp) + "." + String(leadingZeros) + String(drops)
+    return ret
 }
