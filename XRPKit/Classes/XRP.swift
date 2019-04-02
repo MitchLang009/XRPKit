@@ -62,9 +62,15 @@ public class XRP {
                     if let result = response.result.value {
                         let JSON = result as! NSDictionary
                         let info = JSON["result"] as! NSDictionary
-                        let account = info["account_data"] as! NSDictionary
-                        let balance = account["Balance"] as! String
-                        p.completeWithSuccess(Int(balance)!)
+                        let status = info["status"] as! String
+                        if status != "error" {
+                            let account = info["account_data"] as! NSDictionary
+                            let balance = account["Balance"] as! String
+                            p.completeWithSuccess(Int(balance)!)
+                        } else {
+                            let error = info["error_message"] as! String
+                            p.completeWithFail(error)
+                        }
                     }
                 }
         }
