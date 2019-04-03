@@ -30,6 +30,12 @@ public struct CurrentLedgerInfo {
     public var maxFee: Int
 }
 
+public struct AccountInfo {
+    public var address: String
+    public var drops: Int
+    public var sequence: Int
+}
+
 public struct Tx: Codable {
     public var TransactionType: String
     public var Account: String

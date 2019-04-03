@@ -11,6 +11,7 @@ import FutureKit
 
 public class XRP {
     private static let url = "https://s.altnet.rippletest.net:51234"//"https://s2.ripple.com:51234"
+    private static let dataURL = "https://testnet.data.api.ripple.com/v2/"//"https://data.ripple.com/v2/"
     private init() {}
     
     @available(iOS 10.0, *)
@@ -77,6 +78,44 @@ public class XRP {
         return p.future
     }
     
+    @available(iOS 10.0, *)
+    public static func getAccountInfo(account: String) -> Future<AccountInfo> {
+        let p = Promise<AccountInfo>()
+        let parameters: [String: Any] = [
+            "method" : "account_info",
+            "params": [
+                [
+                    "account" : account,
+                    "strict": true,
+                    "ledger_index": "current",
+                    "queue": true
+                ]
+            ]
+        ]
+        
+        Alamofire.request(url, method:.post, parameters: parameters, encoding: JSONEncoding.default)
+            .responseJSON { response in
+                response.result.ifSuccess {
+                    if let result = response.result.value {
+                        let JSON = result as! NSDictionary
+                        let info = JSON["result"] as! NSDictionary
+                        let status = info["status"] as! String
+                        if status != "error" {
+                            let account = info["account_data"] as! NSDictionary
+                            let balance = account["Balance"] as! String
+                            let address = account["Account"] as! String
+                            let sequence = account["Sequence"] as! Int
+                            p.completeWithSuccess(AccountInfo(address: address, drops: Int(balance)!, sequence: sequence))
+                        } else {
+                            let error = info["error_message"] as! String
+                            p.completeWithFail(error)
+                        }
+                    }
+                }
+        }
+        return p.future
+    }
+    
     public static func currentLedgerInfo() -> Future<CurrentLedgerInfo> {
         let p = Promise<CurrentLedgerInfo>()
         let parameters: [String: Any] = [
@@ -100,8 +139,32 @@ public class XRP {
         return p.future
     }
     
+    public static func submit(txBlob: String) -> Future<Bool> {
+        let p = Promise<Bool>()
+        let parameters: [String: Any] = [
+            "method" : "submit",
+            "params": [
+                [
+                    "tx_blob": txBlob
+                ]
+            ]
+            ]
+
+        Alamofire.request(url, method:.post, parameters: parameters, encoding: JSONEncoding.default)
+            .responseJSON { response in
+                response.result.ifSuccess {
+                    if let result = response.result.value {
+                        let JSON = result as! NSDictionary
+                        let info = JSON["result"] as! NSDictionary
+                        p.completeWithSuccess(true)
+                    }
+                }
+        }
+        return p.future
+    }
+    
     private static func txHistURLFor(account: String) -> String {
-        return "https://data.ripple.com/v2/accounts/\(account)/transactions?type=Payment&result=tesSUCCESS&limit=20"
+        return "\(dataURL)accounts/\(account)/transactions?type=Payment&result=tesSUCCESS&limit=20"
     }
 }
 
