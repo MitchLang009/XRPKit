@@ -24,6 +24,11 @@ public struct Account: Codable {
     }
 }
 
+public struct KeyPairData {
+    var secretKeyBytes: [UInt8]
+    var publicKeyBytes: [UInt8]
+}
+
 public struct CurrentLedgerInfo {
     public var index: Int
     public var minFee: Int

@@ -8,6 +8,8 @@
 import Foundation
 import Alamofire
 import FutureKit
+import CryptoSwift
+import secp256k1
 
 public class XRP {
     private static let url = "https://s.altnet.rippletest.net:51234"//"https://s2.ripple.com:51234"
@@ -166,6 +168,69 @@ public class XRP {
     private static func txHistURLFor(account: String) -> String {
         return "\(dataURL)accounts/\(account)/transactions?type=Payment&result=tesSUCCESS&limit=20"
     }
+    
+    public static func generateKeyPair(seed: String) throws -> KeyPairData {
+        let seedData = Data(base58Decoding: seed)!
+        let secretKey = [UInt8](seedData.sha256().prefix(through: 31))
+        let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
+        var pubKey = secp256k1_pubkey()
+        
+        if secp256k1_ec_pubkey_create(ctx!, &pubKey, secretKey) == 0 {
+            secp256k1_context_destroy(ctx)
+            throw KeyPairError.invalidPrivateKey
+        }
+        
+        var publicKey = [UInt8](repeating: 0, count: 33)
+        var outputLen = 33
+        _ = secp256k1_ec_pubkey_serialize(
+            ctx!, &publicKey, &outputLen, &pubKey, UInt32(SECP256K1_EC_COMPRESSED))
+        
+        secp256k1_context_destroy(ctx)
+        return KeyPairData(secretKeyBytes: secretKey, publicKeyBytes: publicKey)
+    }
+    
+    public static func generateAddress(keyPair: KeyPairData) -> String {
+        let accountID = Data([0x00]) + RIPEMD160.hash(message: Data(keyPair.publicKeyBytes).sha256())
+        let checksum = accountID.sha256().sha256().prefix(through: 3)
+        return String(base58Encoding: accountID + checksum)
+        
+    }
+    
+    public static func entropy() -> [UInt8]? {
+        var bytes = [UInt8](repeating: 0, count: 16)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        
+        if status == errSecSuccess { // Always test the status.
+            return bytes
+        }
+        return nil
+    }
+    
+    public enum KeyPairError: Error {
+        case invalidPrivateKey
+    }
+    
+    public enum SeedType {
+        case ed25519
+        case secp256k1
+    }
+    
+    public enum EncodeSeedError: Error {
+        case invalidBufferSize
+        case invalidSeedType
+    }
+    
+    public static func encodeSeed(entropy: [UInt8], type: SeedType) throws -> String {
+        if entropy.count != 16 {
+            throw EncodeSeedError.invalidBufferSize
+        }
+        let version: [UInt8] = type == .ed25519 ? [0x01, 0xE1, 0x4B] : [0x21]
+        let versionEntropy: [UInt8] = version + entropy
+        let check = [UInt8](Data(versionEntropy).sha256().sha256().prefix(through: 3))
+        let versionEntropyCheck: [UInt8] = versionEntropy + check
+        return String(base58Encoding: Data(versionEntropyCheck), alphabet: Base58String.xrpAlphabet)
+    }
+
 }
 
 public func drops2XRP(_ value: Int) -> String {
@@ -177,3 +242,34 @@ public func drops2XRP(_ value: Int) -> String {
     let ret = String(xrp) + "." + String(leadingZeros) + String(drops)
     return ret
 }
+
+//public func getPublicKey(privateKey: PrivateKey) throws -> PublicKey {
+//    let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
+//    var pubKey = secp256k1_pubkey()
+//
+//    if secp256k1_ec_pubkey_create(ctx!, &pubKey, privateKey.getBytes()) == 0 {
+//        secp256k1_context_destroy(ctx)
+//        throw SigningError.invalidPrivateKey
+//    }
+//
+//    var pubKeyBytes = [UInt8](repeating: 0, count: 33)
+//    var outputLen = 33
+//    _ = secp256k1_ec_pubkey_serialize(
+//        ctx!, &pubKeyBytes, &outputLen, &pubKey, UInt32(SECP256K1_EC_COMPRESSED))
+//
+//    secp256k1_context_destroy(ctx)
+//    return Secp256k1PublicKey(pubKey: pubKeyBytes)
+//}
+//
+//public func newRandomPrivateKey() -> PrivateKey {
+//    let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
+//    let bytesCount = 32
+//    var randomBytes: [UInt8] = [UInt8](repeating: 0, count: bytesCount)
+//
+//    repeat {
+//        _ = SecRandomCopyBytes(kSecRandomDefault, bytesCount, &randomBytes)
+//    } while secp256k1_ec_seckey_verify(ctx!, &randomBytes) != Int32(1)
+//
+//    secp256k1_context_destroy(ctx)
+//    return Secp256k1PrivateKey(privKey: randomBytes)
+//}

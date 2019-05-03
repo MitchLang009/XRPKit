@@ -1,8 +1,8 @@
 {
   "name": "XRPKit",
   "version": "0.1.0",
-  "summary": "A short description of XRPKit.",
-  "description": "TODO: Add long description of the pod here.",
+  "summary": "XRP Ledger API",
+  "description": "XRP Ledger API",
   "homepage": "https://github.com/MitchLang009/XRPKit",
   "license": {
     "type": "MIT",
@@ -18,5 +18,16 @@
   "platforms": {
     "ios": "8.0"
   },
-  "source_files": "XRPKit/Classes/**/*"
+  "source_files": "XRPKit/Classes/**/*",
+  "dependencies": {
+    "Alamofire": [
+
+    ],
+    "FutureKit": [
+
+    ],
+    "secp256k1.swift": [
+
+    ]
+  }
 }

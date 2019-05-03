@@ -176,16 +176,22 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-XRPKit_Tests/Pods-XRPKit_Tests-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-XRPKit_Tests/Pods-XRPKit_Tests-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
+				"${BUILT_PRODUCTS_DIR}/FutureKit/FutureKit.framework",
 				"${BUILT_PRODUCTS_DIR}/XRPKit/XRPKit.framework",
+				"${BUILT_PRODUCTS_DIR}/secp256k1.swift/secp256k1.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FutureKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/XRPKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/secp256k1.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-XRPKit_Tests/Pods-XRPKit_Tests-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-XRPKit_Tests/Pods-XRPKit_Tests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		A9BEE5FD0FB0DF5C04DE448F /* [CP] Check Pods Manifest.lock */ = {

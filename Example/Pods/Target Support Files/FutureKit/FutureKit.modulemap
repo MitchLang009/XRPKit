@@ -1,0 +1,6 @@
+framework module FutureKit {
+  umbrella header "FutureKit-umbrella.h"
+
+  export *
+  module * { export * }
+}
