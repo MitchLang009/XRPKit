@@ -11,7 +11,9 @@ import FutureKit
 import CryptoSwift
 import secp256k1
 
+
 public class XRP {
+    
     private static let url = "https://s.altnet.rippletest.net:51234"//"https://s2.ripple.com:51234"
     private static let dataURL = "https://testnet.data.api.ripple.com/v2/"//"https://data.ripple.com/v2/"
     private init() {}
@@ -210,6 +212,10 @@ public class XRP {
         case invalidPrivateKey
     }
     
+    public enum SigningError: Error {
+        case invalidSignature
+    }
+    
     public enum SeedType {
         case ed25519
         case secp256k1
@@ -229,6 +235,51 @@ public class XRP {
         let check = [UInt8](Data(versionEntropy).sha256().sha256().prefix(through: 3))
         let versionEntropyCheck: [UInt8] = versionEntropy + check
         return String(base58Encoding: Data(versionEntropyCheck), alphabet: Base58String.xrpAlphabet)
+    }
+    
+    
+    public static func sign(data: Data, privateKey: Data) throws -> Data {
+        let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
+        var sig = secp256k1_ecdsa_signature()
+        
+        var _data = data.sha256()
+        var _privateKey = privateKey
+        let digestPointer: UnsafeMutablePointer<UInt8> = _data.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
+        let privateKeyPointer: UnsafeMutablePointer<UInt8> = _privateKey.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
+        secp256k1_ecdsa_sign(ctx!, &sig, digestPointer, privateKeyPointer, nil, nil)
+    
+//        msgDigest.withUnsafeBytes {(bytes: UnsafePointer<UInt8>)->Void in
+//            secp256k1_ecdsa_sign(ctx!, &sig, bytes, privateKey, nil, nil)
+//
+//        }
+//
+//        var resultSign = msgDigest.withUnsafeMutableBytes { (msgDigestBytes) in
+//            secp256k1_ecdsa_sign(ctx!, &sig, msgDigestBytes, privateKey, nil, nil)
+//        }
+//
+//        if resultSign == 0 {
+//            throw KeyPairError.invalidPrivateKey
+//        }
+        
+        var input: [UInt8] {
+            var tmp = sig.data
+            return [UInt8](UnsafeBufferPointer(start: &tmp.0, count: MemoryLayout.size(ofValue: tmp)))
+        }
+        var compactSig = secp256k1_ecdsa_signature()
+        
+        if secp256k1_ecdsa_signature_parse_compact(ctx!, &compactSig, input) == 0 {
+            secp256k1_context_destroy(ctx)
+            throw SigningError.invalidSignature
+        }
+        
+        var csigArray: [UInt8] {
+            var tmp = compactSig.data
+            return [UInt8](UnsafeBufferPointer(start: &tmp.0, count: MemoryLayout.size(ofValue: tmp)))
+        }
+        
+        secp256k1_context_destroy(ctx)
+        let retVal =  Data(csigArray)
+        return retVal
     }
 
 }

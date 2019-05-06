@@ -25,8 +25,8 @@ public struct Account: Codable {
 }
 
 public struct KeyPairData {
-    var secretKeyBytes: [UInt8]
-    var publicKeyBytes: [UInt8]
+    public var secretKeyBytes: [UInt8]
+    public var publicKeyBytes: [UInt8]
 }
 
 public struct CurrentLedgerInfo {
