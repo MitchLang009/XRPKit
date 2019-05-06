@@ -170,8 +170,15 @@ public class Serializer {
         Some fields contain nested non-length-prefixed AccountIDs directly; those
         call decode_address() instead of this function.
         */
-        let addressData = Data(base58Decoding: address)!
-        return vlEncode(contents: addressData)
+        let _array = [UInt8](Data(base58Decoding: address)!)
+        let array = _array.prefix(_array.count-4)
+        
+        if array[0] == 0 || array.count == 21 {
+            let addressData = Data(array.suffix(from: 1))
+            return vlEncode(contents: addressData)
+        } else {
+            fatalError()
+        }
     }
     
     private func amountToBytes(amount: String) -> Data {
@@ -192,8 +199,7 @@ public class Serializer {
             // convert to absolute value, leaving the "is positive" bit unset
             xrp_amt = -xrp_amt
         }
-        return Data(bytes: &xrp_amt,
-                    count: MemoryLayout.size(ofValue: xrp_amt))
+        return xrp_amt.bigEndian.data
     }
     
     private func arrayToBytes(array: [TypeWrapper]) -> Data {
@@ -302,21 +308,15 @@ public class Serializer {
     }
     
     private func UInt8Byte(_ int: UInt8) -> Data {
-        var _tmp = int
-        return Data(bytes: &_tmp,
-             count: MemoryLayout.size(ofValue: int))
+        return int.bigEndian.data
     }
     
     private func UInt16Bytes(_ int: UInt16) -> Data {
-        var _tmp = int
-        return Data(bytes: &_tmp,
-                    count: MemoryLayout.size(ofValue: int))
+        return int.bigEndian.data
     }
     
     private func UInt32Bytes(_ int: UInt32) -> Data {
-        var _tmp = int
-        return Data(bytes: &_tmp,
-                    count: MemoryLayout.size(ofValue: int))
+        return int.bigEndian.data
     }
     
     // ========================
@@ -519,5 +519,12 @@ extension Data {
     var hexadecimal: String {
         return map { String(format: "%02x", $0) }
             .joined()
+    }
+}
+
+extension Numeric {
+    var data: Data {
+        var source = self
+        return Data(bytes: &source, count: MemoryLayout<Self>.size)
     }
 }
