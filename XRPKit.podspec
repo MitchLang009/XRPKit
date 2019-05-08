@@ -34,12 +34,15 @@ Pod::Spec.new do |s|
   #   'XRPKit' => ['XRPKit/Assets/*.png']
   # }
 
-  # s.public_header_files = 'Pod/Classes/**/*.h'
+  s.public_header_files = 'XRPKit/Classes/Foo+Swift.h'
   # s.frameworks = 'UIKit', 'MapKit'
   s.dependency 'Alamofire'
   s.dependency 'FutureKit'
   s.dependency 'secp256k1.swift'
   s.dependency 'CryptoSwift'
   s.dependency 'BigInt'
-  
+  s.dependency 'OpenSSL-Universal'
+
+  s.static_framework = true
+  s.libraries = 'c++'
 end

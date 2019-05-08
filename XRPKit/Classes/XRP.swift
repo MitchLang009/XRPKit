@@ -10,6 +10,7 @@ import Alamofire
 import FutureKit
 import CryptoSwift
 import secp256k1
+import BigInt
 
 
 public class XRP {
@@ -172,8 +173,8 @@ public class XRP {
     }
     
     public static func generateKeyPair(seed: String) throws -> KeyPairData {
-        let seedData = Data(base58Decoding: seed)!
-        let secretKey = [UInt8](seedData.sha256().prefix(through: 31))
+        let seedData = XRP.decodeSeed(seed: seed)! + UInt32(0).data
+        let secretKey = [0x00] + [UInt8](seedData.sha512().prefix(through: 31))
         let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
         var pubKey = secp256k1_pubkey()
         
@@ -190,6 +191,15 @@ public class XRP {
         secp256k1_context_destroy(ctx)
         return KeyPairData(secretKeyBytes: secretKey, publicKeyBytes: publicKey)
     }
+    
+//    public static func generator() {
+//        var privKey: BigInt = 0
+//        let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
+//        var seq = 0
+//        repeat {
+//
+//        } while (privKey == 0) || privKey >= secp
+//    }
     
     public static func generateAddress(keyPair: KeyPairData) -> String {
         let accountID = Data([0x00]) + RIPEMD160.hash(message: Data(keyPair.publicKeyBytes).sha256())
@@ -235,6 +245,19 @@ public class XRP {
         let check = [UInt8](Data(versionEntropy).sha256().sha256().prefix(through: 3))
         let versionEntropyCheck: [UInt8] = versionEntropy + check
         return String(base58Encoding: Data(versionEntropyCheck), alphabet: Base58String.xrpAlphabet)
+    }
+    
+    public static func decodeSeed(seed: String) -> [UInt8]? {
+        let versionEntropyCheck = [UInt8](Data(base58Decoding: seed)!)
+        let check = Array(versionEntropyCheck.suffix(4))
+        let versionEntropy = versionEntropyCheck.prefix(versionEntropyCheck.count-4)
+        if check == [UInt8](Data(versionEntropy).sha256().sha256().prefix(through: 3)) {
+            if versionEntropy[0] == 0x21 {
+                let entropy = Array(versionEntropy.suffix(versionEntropy.count-1))
+                return entropy
+            }
+        }
+        return nil
     }
     
     
@@ -324,3 +347,77 @@ public func drops2XRP(_ value: Int) -> String {
 //    secp256k1_context_destroy(ctx)
 //    return Secp256k1PrivateKey(privKey: randomBytes)
 //}
+
+public class PrivateKey {
+    public static var algorithmName = "secp256k1"
+    let privKey: [UInt8]
+    
+    init(privKey: [UInt8]) {
+        self.privKey = privKey
+    }
+    
+    public static func fromHex(hexPrivKey: String) -> PrivateKey {
+        return PrivateKey(privKey: [UInt8](Data(hex: hexPrivKey)))
+    }
+    
+    public func hex() -> String {
+        return Data(self.privKey).toHexString()
+    }
+    
+    public func getBytes() -> [UInt8] {
+        return self.privKey
+    }
+}
+
+public class PublicKey {
+    public static var algorithmName = "secp256k1"
+    let pubKey: [UInt8]
+    
+    init(pubKey: [UInt8]) {
+        self.pubKey = pubKey
+    }
+    
+    public static func fromHex(hexPubKey: String) -> PublicKey {
+        return PublicKey(pubKey: [UInt8](Data(hex: hexPubKey)))
+    }
+    
+    public func hex() -> String {
+        return Data(self.pubKey).toHexString()
+    }
+    
+    public func getBytes() -> [UInt8] {
+        return self.pubKey
+    }
+}
+
+public func getPublicKey(privateKey: PrivateKey) throws -> PublicKey {
+    let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
+    var pubKey = secp256k1_pubkey()
+    
+    if secp256k1_ec_pubkey_create(ctx!, &pubKey, privateKey.getBytes()) == 0 {
+        secp256k1_context_destroy(ctx)
+        fatalError()
+//        throw SigningError.invalidPrivateKey
+    }
+    
+    var pubKeyBytes = [UInt8](repeating: 0, count: 33)
+    var outputLen = 33
+    _ = secp256k1_ec_pubkey_serialize(
+        ctx!, &pubKeyBytes, &outputLen, &pubKey, UInt32(SECP256K1_EC_COMPRESSED))
+    
+    secp256k1_context_destroy(ctx)
+    return PublicKey(pubKey: pubKeyBytes)
+}
+
+public func newRandomPrivateKey() -> PrivateKey {
+    let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
+    let bytesCount = 32
+    var randomBytes: [UInt8] = [UInt8](repeating: 0, count: bytesCount)
+    
+    repeat {
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytesCount, &randomBytes)
+    } while secp256k1_ec_seckey_verify(ctx!, &randomBytes) != Int32(1)
+    
+    secp256k1_context_destroy(ctx)
+    return PrivateKey(privKey: randomBytes)
+}
