@@ -47,4 +47,83 @@ extern std::vector<sPrefix*> g_Prefixes;
 
 int generateKeypair(std::array<std::uint8_t, 21> seed);
 
+class bignum
+{
+    private:
+    BIGNUM* ptr;
+    
+    // non-copyable
+    bignum           (bignum const&) = delete;
+    bignum& operator=(bignum const&) = delete;
+    
+    void assign_new (uint8_t const* data, size_t size);
+    
+    public:
+    bignum();
+    
+    ~bignum()
+    {
+        if ( ptr != nullptr)
+        {
+            BN_free (ptr);
+        }
+    }
+    
+    bignum (uint8_t const* data, size_t size)
+    {
+        assign_new (data, size);
+    }
+    
+    template <class T>
+    explicit bignum (T const& thing)
+    {
+        assign_new (thing.data(), thing.size());
+    }
+    
+    bignum(bignum&& that) noexcept : ptr( that.ptr )
+    {
+        that.ptr = nullptr;
+    }
+    
+    bignum& operator= (bignum&& that) noexcept
+    {
+        using std::swap;
+        
+        swap( ptr, that.ptr );
+        
+        return *this;
+    }
+    
+    BIGNUM      * get()        { return ptr; }
+    BIGNUM const* get() const  { return ptr; }
+    
+    bool is_zero() const  { return BN_is_zero (ptr); }
+    
+    void clear()  { BN_clear (ptr); }
+    
+    void assign (uint8_t const* data, size_t size);
+};
+
+class bn_ctx
+{
+    private:
+    BN_CTX* ptr;
+    
+    // non-copyable
+    bn_ctx           (bn_ctx const&);
+    bn_ctx& operator=(bn_ctx const&);
+    
+    public:
+    bn_ctx();
+    
+    ~bn_ctx()
+    {
+        BN_CTX_free (ptr);
+    }
+    
+    BN_CTX      * get()        { return ptr; }
+    BN_CTX const* get() const  { return ptr; }
+};
+
 #endif /* GenerateKeyPair_hpp */
+
