@@ -25,11 +25,15 @@
     delete _bar;
 }
 
-- (UInt8)generateKP:(UInt8 *) seed {
+- (NSArray*)generateKP:(UInt8 *) seed {
     std::array<std::uint8_t, 21> SeedBuffer = { 0 };
     memcpy(&SeedBuffer[1], static_cast<void*>(seed), 16);
-    generateKeypair(SeedBuffer);
-    return 2;
+    std::vector<std::string> results = generateKeypair(SeedBuffer);
+    NSMutableArray *returnArray = [NSMutableArray arrayWithCapacity:results.size()];
+    for(int i = 0;i< results.size();i++){
+            [returnArray addObject:[NSString stringWithUTF8String:results[i].c_str()]];
+    }
+    return returnArray;
 }
 
 - (void)pushInt:(int)val {

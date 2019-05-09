@@ -91,6 +91,12 @@ public class Serializer {
     }
     
     private func fieldID(fieldName: String) -> Data {
+        
+        if fieldName == "TxnSignature" {
+            print(true)
+        } else {
+            print(false)
+        }
         /*
         Returns the unique field ID for a given field name.
         This field ID consists of the type code and field code, in 1 to 3 bytes
@@ -324,6 +330,10 @@ public class Serializer {
     // ========================
     
     private func fieldToBytes(fieldName: String, fieldVal: Any) -> Data {
+        
+        if fieldName == "TxnSignature" {
+            print(true)
+        }
         
         let fieldType = definitions.FIELDS[fieldName]!.type
         let idPrefix = fieldID(fieldName: fieldName)

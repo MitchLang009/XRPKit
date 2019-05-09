@@ -19,7 +19,7 @@
 @property (atomic, readonly) std::vector<int>* bar;
 @property (readonly) size_t size;
 
-- (UInt8)generateKP:(UInt8 *) seed;
+- (NSArray*)generateKP:(UInt8 *) seed;
 
 @end
 

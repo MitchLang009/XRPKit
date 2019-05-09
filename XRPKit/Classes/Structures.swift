@@ -46,6 +46,13 @@ public struct AccountInfo {
     public var sequence: Int
 }
 
+public struct Wallet {
+    public var privateKey: String
+    public var publicKey: String
+    public var seed: String
+    public var account: String
+}
+
 public struct Tx: Codable {
     public var TransactionType: String
     public var Account: String

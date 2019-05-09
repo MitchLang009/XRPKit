@@ -106,7 +106,10 @@ void writeBE(uint8_t *pBuffer, std::uint32_t pValue) {
     *pBuffer = (pValue >> 0) & 0xFF;
 }
 
-void findkey(std::array<std::uint8_t, 21> seed) {
+std::vector<std::string> findkey(std::array<std::uint8_t, 21> seed) {
+    
+    std::vector<std::string> retArray;
+    
     std::array<std::uint8_t, 64> WorkBuffer;
     std::array<std::uint8_t, 64> WorkBufferPub;
     std::array<std::uint8_t, 21> SeedBuffer = { 0 };
@@ -148,7 +151,6 @@ void findkey(std::array<std::uint8_t, 21> seed) {
             // Valid Key?
         } while (BN_is_zero(bnPrivateKey) || BN_cmp(bnPrivateKey, g_CurveOrder) >= 0);
     
-        auto sk = hexStr(&WorkBuffer[0], 32);
         // generateRootDeterministicPublicKey
         {
             // ptRoot = generator * bnPrivateKey
@@ -180,10 +182,11 @@ void findkey(std::array<std::uint8_t, 21> seed) {
             bignum_st* bnPrivateKey22 = BN_new();
             BN_mod_add(bnPrivateKey22, bnPrivateKey, bnHash, g_CurveOrder, Ctx);
             std::array<std::uint8_t, 33> result = {0};
-            unsigned char* ptr = (unsigned char *)(&result[2]);
+            unsigned char* ptr = (unsigned char *)(&result[1]);
             BN_bn2bin (bnPrivateKey22, ptr);
             auto ptR_ = (unsigned char*)&result;
             auto sk = hexStr(ptR_, 33);
+            retArray.push_back(sk);
             std::cout  << "\n" << "\n" << sk;
         }
     
@@ -191,6 +194,8 @@ void findkey(std::array<std::uint8_t, 21> seed) {
         // Account ID
         {
             auto pk = hexStr((unsigned char*)&WorkBuffer[0], 33);
+            retArray.push_back(pk);
+            
             SHA256(&WorkBuffer[0], 33, &WorkBuffer[0]);
             RIPEMD160(&WorkBuffer[0], 32, &WorkBuffer[1]);
             
@@ -201,20 +206,10 @@ void findkey(std::array<std::uint8_t, 21> seed) {
             
             // Full AccountID
             auto account = baseEncode(TOKEN_ACCOUNT_ID, &WorkBuffer[0], 21, Ctx);
-            
-            auto t = std::time(nullptr);
-            auto tm = *std::localtime(&t);
-            
-//            std::cout << std::put_time(&tm, "[%Y-%m-%d %H:%M:%S] ");
-            auto ptR_ = (unsigned char*)&bnPrivateKey;
-
-//            auto sk = hexStr(ptR_, 32);
-            
-//            std::cout  << "\n" << "\n" << sk;
-            
-            std::cout << "\n" << pk << "\n" << "\n";
-            
-            std::cout << account << " => " << baseEncode(TOKEN_FAMILY_SEED, &SeedBuffer[0], 17, Ctx) << "\n";
+            auto seed = baseEncode(TOKEN_FAMILY_SEED, &SeedBuffer[0], 17, Ctx);
+            retArray.push_back(seed);
+            retArray.push_back(account);
+            std::cout << account << " => " << seed << "\n";
             
             g_FoundKey = true;
         }
@@ -223,9 +218,11 @@ void findkey(std::array<std::uint8_t, 21> seed) {
     BN_free(bnPrivateKey);
     EC_POINT_free(ptRoot);
     EC_POINT_free(ptPublic);
+    
+    return retArray;
 }
 
-int generateKeypair(std::array<std::uint8_t, 21> seed)
+std::vector<std::string> generateKeypair(std::array<std::uint8_t, 21> seed)
 {
     // Base 58 Encoding
     BN_set_word(g_Base, 58);
@@ -235,7 +232,6 @@ int generateKeypair(std::array<std::uint8_t, 21> seed)
     EC_GROUP_get_order(g_CurveGroup, g_CurveOrder, g_Ctx);
     EC_GROUP_precompute_mult(g_CurveGroup, g_Ctx);
 
-    findkey(seed);
-    return 1;
+    return findkey(seed);
     
 }

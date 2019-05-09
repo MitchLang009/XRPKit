@@ -10,10 +10,11 @@
 #define Foo_Swift_h
 
 #import <Foundation/Foundation.h>
+#import <CommonCrypto/CommonCrypto.h>
 
 @interface Foo : NSObject
 
-- (UInt8)generateKP:(UInt8 *) seed;
+- (NSArray*)generateKP:(UInt8 *) seed;
 
 @end
 
