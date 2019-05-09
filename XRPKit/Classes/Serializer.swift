@@ -170,21 +170,25 @@ public class Serializer {
         fatalError("VariableLength field must be <= 918744 bytes long")
     }
     
+    private func decodeAddress(address: String) -> Data {
+        let _array = [UInt8](Data(base58Decoding: address)!)
+        let array = _array.prefix(_array.count-4)
+        
+        if array[0] == 0 || array.count == 21 {
+            return Data(array.suffix(from: 1))
+        } else {
+            fatalError()
+        }
+    }
+    
     private func accountIDToBytes(address: String) -> Data {
         /*
         Serialize an AccountID field type. These are length-prefixed.
         Some fields contain nested non-length-prefixed AccountIDs directly; those
         call decode_address() instead of this function.
         */
-        let _array = [UInt8](Data(base58Decoding: address)!)
-        let array = _array.prefix(_array.count-4)
-        
-        if array[0] == 0 || array.count == 21 {
-            let addressData = Data(array.suffix(from: 1))
-            return vlEncode(contents: addressData)
-        } else {
-            fatalError()
-        }
+        let addressData = decodeAddress(address: address)
+        return vlEncode(contents: addressData)
     }
     
     private func amountToBytes(amount: String) -> Data {
@@ -206,6 +210,113 @@ public class Serializer {
             xrp_amt = -xrp_amt
         }
         return xrp_amt.bigEndian.data
+    }
+    
+    private func amountDictToBytes(dict: [String:Any]) -> Data {
+        if dict.keys.sorted() != ["currency", "issuer", "value"] {
+            fatalError("amount must have currency, value, issuer")
+        }
+        
+        let issued_amt = IssuedAmount(value: dict["value"] as! String).canonicalize()
+        let currency_code = currency_code_to_bytes(code_string: dict["currency"] as! String)
+        return issued_amt + currency_code + decodeAddress(address: dict["issuer"] as! String)
+    }
+
+    func currency_code_to_bytes(code_string: String, xrp_ok:Bool = false) -> Data {
+        // NEEDS FIXED - regex is wacky
+        let regex = try! NSRegularExpression(pattern: "^[A-Za-z0-9?!@#$%^&*<>(){}|]{3}$", options: [])
+        let matches = regex.matches(in: code_string, options: [], range: NSMakeRange(0,code_string.count))
+        let regex2 = try! NSRegularExpression(pattern: "^[0-9a-fA-F]{40}$", options: [])
+        let matches2 = regex2.matches(in: code_string, options: [], range: NSMakeRange(0,code_string.count))
+        if matches.count != 0 {
+            if code_string == "XRP" {
+                if xrp_ok {
+                    // Rare, but when the currency code "XRP" is serialized, it's
+                    // a special-case all zeroes.
+                    return Data(repeating: 0, count: 20)
+                    
+                }
+            }
+            
+            let ascii = code_string.data(using: .nonLossyASCII)!
+            // standard currency codes: https://developers.ripple.com/currency-formats.html#standard-currency-codes
+            // 8 bits type code (0x00)
+            // 88 bits reserved (0's)
+            // 24 bits ASCII
+            // 16 bits version (0x00)
+            // 24 bits reserved (0's)
+            return Data(repeating: 0, count: 12) + ascii + Data(repeating: 0, count: 5)
+        } else if matches2.count != 0 {
+            return Data(hex: code_string)
+        }
+        
+        fatalError("invalid currency")
+    }
+    
+    func pathset_to_bytes(pathset: [[[String:Any]]]) -> Data {
+        /*
+         Serialize a PathSet, which is an array of arrays,
+         where each inner array represents one possible payment path.
+         A path consists of "path step" objects in sequence, each with one or
+         more of "account", "currency", and "issuer" fields, plus (ignored) "type"
+         and "type_hex" fields which indicate which fields are present.
+         (We re-create the type field for serialization based on which of the core
+         3 fields are present.)
+         */
+        
+        if pathset.count == 0 {
+            fatalError("PathSet type must not be empty")
+        }
+        
+        var pathSetBytes: Data = Data()
+        for (index, path) in pathset.enumerated() {
+            let _pathAsBytes = pathAsBytes(path: path)
+            print("path: \(index)")
+            print(_pathAsBytes.toHexString())
+            pathSetBytes.append(_pathAsBytes)
+            if index == pathset.count - 1 {
+                pathSetBytes.append(Data(hex: "00"))
+            } else {
+                pathSetBytes.append(Data(hex: "ff"))
+            }
+        }
+        return pathSetBytes
+    }
+    
+    func pathAsBytes(path: [[String:Any]]) -> Data {
+        //    Helper function for representing one member of a pathset as a bytes object
+        if path.count == 0 {
+            fatalError("Path type must not be empty")
+        }
+        
+        var pathBytes = Data()
+        print(pathBytes.toHexString())
+        for step in path {
+            var stepData = Data()
+            var typeByte: UInt8 = 0
+            if step.keys.contains("account") {
+                typeByte |= 0x01
+                stepData.append(decodeAddress(address: step["account"] as! String))
+                print("path account")
+                print(stepData.toHexString())
+            }
+            if step.keys.contains("currency") {
+                typeByte |= 0x10
+                stepData.append(currency_code_to_bytes(code_string: step["currency"] as! String, xrp_ok: true))
+                print("path currency")
+                print(stepData.toHexString())
+            }
+            if step.keys.contains("issuer") {
+                typeByte |= 0x20
+                stepData.append(decodeAddress(address: step["issuer"] as! String))
+                print("path issuer")
+                print(stepData.toHexString())
+            }
+            stepData = [typeByte] + stepData
+            pathBytes.append(stepData)
+        }
+        
+        return pathBytes
     }
     
     private func arrayToBytes(array: [TypeWrapper]) -> Data {
@@ -349,8 +460,12 @@ public class Serializer {
                 let address = fieldVal as! String
                 return self.accountIDToBytes(address: address)
             case "Amount":
-                let amount = fieldVal as! String
-                return self.amountToBytes(amount: amount)
+                if let amount = fieldVal as? String {
+                    return self.amountToBytes(amount: amount)
+                } else if let amount = fieldVal as? [String:Any] {
+                    return self.amountDictToBytes(dict: amount)
+                }
+                fatalError()
             case "Blob":
                 let hexBlob = fieldVal as! String
                 return self.blobToBytes(hexBlob: hexBlob)
@@ -364,7 +479,8 @@ public class Serializer {
                 let hexString = fieldVal as! String
                 return self.hash256ToBytes(hexString: hexString)
             case "PathSet":
-                fatalError()
+                let pathSet = fieldVal as! [[[String:Any]]]
+                return self.pathset_to_bytes(pathset: pathSet)
             case "STArray":
                 let array = fieldVal as! [[String:Any]]
                 let wrappers: [TypeWrapper] = array.map({ (dict) -> TypeWrapper in
@@ -532,7 +648,7 @@ extension Data {
     }
 }
 
-extension Numeric {
+public extension Numeric {
     var data: Data {
         var source = self
         return Data(bytes: &source, count: MemoryLayout<Self>.size)

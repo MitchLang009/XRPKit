@@ -408,38 +408,6 @@ public func newRandomPrivateKey() -> PrivateKey {
 //    return Data(hex: actualSignature)
 //}
 
-public func signNow(data: [UInt8], privateKey: [UInt8]) throws -> String {
-    let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
-    var sig = secp256k1_ecdsa_signature()
-    
-    var _privateKey = Data(privateKey)
-    var data = Data(data)
-    let digestPointer: UnsafeMutablePointer<UInt8> = data.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
-    let privateKeyPointer: UnsafeMutablePointer<UInt8> = _privateKey.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
-    let resultSign = secp256k1_ecdsa_sign(ctx!, &sig, digestPointer, privateKeyPointer, secp256k1_nonce_function_rfc6979, nil)
-    if resultSign == 0 {
-        secp256k1_context_destroy(ctx)
-        throw XRP.SigningError.invalidPrivateKey
-    }
-    var tmp: [UInt8] = Array(repeating: 0, count: 72)
-    var size = tmp.count
-    if secp256k1_ecdsa_signature_serialize_der(ctx!, &tmp[0], &size, &sig) == 0 {
-        secp256k1_context_destroy(ctx)
-        throw XRP.SigningError.invalidSignature
-    }
-    let ret = Data(tmp.prefix(through: size-1))
-    secp256k1_context_destroy(ctx)
-    return ret.toHexString()
-}
-public func signFinal(data: [UInt8], privateKey: [UInt8], publicKey: [UInt8]) throws -> String {
-    let data: [UInt8] = HASH_TX_SIGN_TESTNET + data
-    let _data: [UInt8] = myHash(data: data)
-    let signature = try signNow(data: _data, privateKey: privateKey)
-    print(signature)
-    let verified = try verify(signature: signature, data: data, publicKey: publicKey)
-    return signature
-}
-
 //public class Signer {
 //    var context: Secp256k1Context
 //    var privateKey: Secp256k1PrivateKey
@@ -696,34 +664,67 @@ public func signFinal(data: [UInt8], privateKey: [UInt8], publicKey: [UInt8]) th
 //
 //}
 
-public func verify(signature: String, data: [UInt8], publicKey: [UInt8]) throws-> Bool {
-    let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_VERIFY))
-    
+public func signNow(data: [UInt8], privateKey: [UInt8]) throws -> String {
+    let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
     var sig = secp256k1_ecdsa_signature()
     
-    var _signature = Data(hex: signature)
-    let signature: UnsafeMutablePointer<UInt8> = _signature.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
+    var _privateKey = Data(privateKey)
+    var data = Data(data)
+    let resultSign = secp256k1_ecdsa_sign(ctx!, &sig, data.getPointer(), _privateKey.getPointer(), secp256k1_nonce_function_rfc6979, nil)
+    if resultSign == 0 {
+        secp256k1_context_destroy(ctx)
+        throw XRP.SigningError.invalidPrivateKey
+    }
+    var tmp: [UInt8] = Array(repeating: 0, count: 72)
+    var size = tmp.count
+    if secp256k1_ecdsa_signature_serialize_der(ctx!, &tmp[0], &size, &sig) == 0 {
+        secp256k1_context_destroy(ctx)
+        throw XRP.SigningError.invalidSignature
+    }
+    let ret = Data(tmp.prefix(through: size-1))
+    secp256k1_context_destroy(ctx)
+    return ret.toHexString()
+}
+
+public func signFinal(data: [UInt8], privateKey: [UInt8], publicKey: [UInt8]) throws -> String {
+    let privateKey = [UInt8](privateKey.suffix(from: 1))
+    print(Data(privateKey).toHexString())
+    print(Data(publicKey).toHexString())
+    print(Data(data).toHexString())
+    let data: [UInt8] = HASH_TX_SIGN_TESTNET + data
+    let _data: [UInt8] = myHash(data: data)
+    let signature = try signNow(data: _data, privateKey: privateKey)
+    print(signature)
+    let verified = try verify(signature: signature, data: data, publicKey: publicKey)
+    if !verified {
+        fatalError()
+    }
+    return signature
+}
+
+public func verify(signature: String, data: [UInt8], publicKey: [UInt8]) throws-> Bool {
     
+    let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_VERIFY))
+    var sig = secp256k1_ecdsa_signature()
+    
+    var _signatureData = Data(hex: signature)
     var _pubKeyData = Data(publicKey)
-    let pubKeyData: UnsafeMutablePointer<UInt8> = _pubKeyData.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
-    
     var _msgDigest = Data(myHash(data: data))
-    let msgDigest: UnsafeMutablePointer<UInt8> = _msgDigest.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
     
-    if secp256k1_ecdsa_signature_parse_der(ctx!, &sig, signature, _signature.count) == 0 {
+    if secp256k1_ecdsa_signature_parse_der(ctx!, &sig, _signatureData.getPointer(), _signatureData.count) == 0 {
         secp256k1_context_destroy(ctx)
         throw XRP.SigningError.invalidSignature
     }
     
     var pubKey = secp256k1_pubkey()
-    let resultParsePublicKey = secp256k1_ec_pubkey_parse(ctx!, &pubKey, pubKeyData,
+    let resultParsePublicKey = secp256k1_ec_pubkey_parse(ctx!, &pubKey, _pubKeyData.getPointer(),
                                                          _pubKeyData.count)
     if resultParsePublicKey == 0 {
         secp256k1_context_destroy(ctx)
         throw XRP.SigningError.invalidPublicKey
     }
     
-    let result = secp256k1_ecdsa_verify(ctx!, &sig, msgDigest, &pubKey)
+    let result = secp256k1_ecdsa_verify(ctx!, &sig, _msgDigest.getPointer(), &pubKey)
 
     
     secp256k1_context_destroy(ctx)
@@ -737,4 +738,10 @@ public func verify(signature: String, data: [UInt8], publicKey: [UInt8]) throws-
 
 func myHash(data: [UInt8]) -> [UInt8] {
     return [UInt8](Data(data.sha512().prefix(through: 31)))
+}
+
+extension Data {
+    mutating func getPointer() -> UnsafeMutablePointer<UInt8> {
+        return self.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
+    }
 }
