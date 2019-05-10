@@ -21,43 +21,36 @@ public class Transaction {
     
     public func sign(wallet: XRPWallet) throws -> Transaction {
         
+        // add account public key to fields
         self.fields["SigningPubKey"] = wallet.publicKey as AnyObject
-        print("\nunsigned tx json:")
-        print(self.getJSONString())
         
+        // serialize transation to binary
         let blob = Serializer.sharedInstance.serializeTx(tx: self.fields, forSigning: true)
-        print("\nunsigned tx blob:")
-        print(blob.toHexString())
         
+        // remove one byte prefix from primary key
         let privateKey = [UInt8](Data(hex: wallet.privateKey).suffix(from: 1))
-        print("\n32 byte private key:")
-        print(privateKey.toHexString())
         
+        // add the transaction prefix to the blob
         let data: [UInt8] = HASH_TX_SIGN + blob
-        print("\nprefixed tx blob:")
-        print(data.toHexString())
         
+        // sign the prefixed blob
         let signature = try SECP256K1.sign(data: data, privateKey: privateKey)
-        print("\nsignature:")
-        print(signature.toHexString())
         
+        // verify signature
         let publicKey = [UInt8](Data(hex: wallet.publicKey))
         let verified = try SECP256K1.verify(signature: signature, data: data, publicKey: publicKey)
         if !verified {
             fatalError()
         }
         
+        // create another transaction instance and add the signature to the fields
         let signedTransaction = Transaction(fields: self.fields)
         signedTransaction.fields["TxnSignature"] = signature.toHexString().uppercased() as Any
         return signedTransaction
     }
     
     public func submit() -> Future<Bool> {
-        print("\nsigned tx json:")
-        print(self.getJSONString())
         let tx = Serializer.sharedInstance.serializeTx(tx: self.fields, forSigning: false).toHexString().uppercased()
-        print("\nsigned tx blob:")
-        print(tx)
         return XRP.Ledger.submit(txBlob: tx)
     }
     

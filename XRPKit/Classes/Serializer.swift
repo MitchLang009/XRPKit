@@ -266,8 +266,6 @@ public class Serializer {
         var pathSetBytes: Data = Data()
         for (index, path) in pathset.enumerated() {
             let _pathAsBytes = pathAsBytes(path: path)
-            print("path: \(index)")
-            print(_pathAsBytes.toHexString())
             pathSetBytes.append(_pathAsBytes)
             if index == pathset.count - 1 {
                 pathSetBytes.append(Data(hex: "00"))
@@ -285,27 +283,20 @@ public class Serializer {
         }
         
         var pathBytes = Data()
-        print(pathBytes.toHexString())
         for step in path {
             var stepData = Data()
             var typeByte: UInt8 = 0
             if step.keys.contains("account") {
                 typeByte |= 0x01
                 stepData.append(decodeAddress(address: step["account"] as! String))
-                print("path account")
-                print(stepData.toHexString())
             }
             if step.keys.contains("currency") {
                 typeByte |= 0x10
                 stepData.append(currency_code_to_bytes(code_string: step["currency"] as! String, xrp_ok: true))
-                print("path currency")
-                print(stepData.toHexString())
             }
             if step.keys.contains("issuer") {
                 typeByte |= 0x20
                 stepData.append(decodeAddress(address: step["issuer"] as! String))
-                print("path issuer")
-                print(stepData.toHexString())
             }
             stepData = [typeByte] + stepData
             pathBytes.append(stepData)
@@ -437,10 +428,6 @@ public class Serializer {
     
     private func fieldToBytes(fieldName: String, fieldVal: Any) -> Data {
         
-        if fieldName == "TxnSignature" {
-            print(true)
-        }
-        
         let fieldType = definitions.FIELDS[fieldName]!.type
         let idPrefix = fieldID(fieldName: fieldName)
         
@@ -556,8 +543,8 @@ public class Serializer {
                 let fieldVal = tx[tuple.name]!
                 let bytes = fieldToBytes(fieldName: tuple.name, fieldVal: fieldVal)
                 fieldAsBytes.append(bytes)
-                print(tuple.name)
-                printBytes([bytes])
+//                print(tuple.name)
+//                printBytes([bytes])
                 
             }
         }
@@ -571,9 +558,7 @@ public class Serializer {
             return result + newData
         })
         print(combined.hexadecimal)
-        print("""
-
-""")
+        print("\n")
     }
 
 }
