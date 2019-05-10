@@ -21,6 +21,9 @@ public class Transaction {
     
     public func sign(wallet: XRPWallet) throws -> Transaction {
         
+        // make sure all fields are compatible
+        self.fields = self.enforceJSONTypes(fields: self.fields)
+        
         // add account public key to fields
         self.fields["SigningPubKey"] = wallet.publicKey as AnyObject
         

@@ -30,7 +30,7 @@ public class Account {
         let entropy = decodeSeed(seed: seed)!
         var data = Data(entropy)
         let privateKeyPointer: UnsafeMutablePointer<UInt8> = data.withUnsafeMutableBytes { (bytePtr: UnsafeMutablePointer<UInt8>) in bytePtr }
-        let result = Foo().generateKP(privateKeyPointer)
+        let result = GeneratorWrapper().generateKP(privateKeyPointer)
         let results = result as! [String]
         let myPrivateKey = results[0].uppercased()
         let myPublicKey = results[1].uppercased()
@@ -39,31 +39,10 @@ public class Account {
         return XRPWallet(privateKey: myPrivateKey, publicKey: myPublicKey, seed: mySecret, account: myAccount)
     }
     
-    public func generateKeyPair(seed: String) throws -> KeyPairData {
-        let seedData = decodeSeed(seed: seed)! + UInt32(0).data
-        let secretKey = [0x00] + [UInt8](seedData.sha512().prefix(through: 31))
-        let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
-        var pubKey = secp256k1_pubkey()
-        
-        if secp256k1_ec_pubkey_create(ctx!, &pubKey, secretKey) == 0 {
-            secp256k1_context_destroy(ctx)
-            throw KeyPairError.invalidPrivateKey
-        }
-        
-        var publicKey = [UInt8](repeating: 0, count: 33)
-        var outputLen = 33
-        _ = secp256k1_ec_pubkey_serialize(
-            ctx!, &publicKey, &outputLen, &pubKey, UInt32(SECP256K1_EC_COMPRESSED))
-        
-        secp256k1_context_destroy(ctx)
-        return KeyPairData(secretKeyBytes: secretKey, publicKeyBytes: publicKey)
-    }
-    
-    public func generateAddress(keyPair: KeyPairData) -> String {
-        let accountID = Data([0x00]) + RIPEMD160.hash(message: Data(keyPair.publicKeyBytes).sha256())
+    public func deriveAddress(publicKey: String) -> String {
+        let accountID = Data([0x00]) + RIPEMD160.hash(message: Data(hex: publicKey).sha256())
         let checksum = accountID.sha256().sha256().prefix(through: 3)
         return String(base58Encoding: accountID + checksum)
-        
     }
     
     public func entropy() -> [UInt8]? {

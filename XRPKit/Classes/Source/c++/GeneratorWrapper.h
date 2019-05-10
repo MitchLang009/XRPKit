@@ -12,12 +12,9 @@
 #import <Foundation/Foundation.h>
 #import <vector>
 
-@interface Foo : NSObject {
-    std::vector<int>* _bar;
-}
+@interface GeneratorWrapper : NSObject {
 
-@property (atomic, readonly) std::vector<int>* bar;
-@property (readonly) size_t size;
+}
 
 - (NSArray*)generateKP:(UInt8 *) seed;
 

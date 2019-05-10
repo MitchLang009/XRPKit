@@ -34,7 +34,7 @@ Pod::Spec.new do |s|
   #   'XRPKit' => ['XRPKit/Assets/*.png']
   # }
 
-  s.public_header_files = 'XRPKit/Classes/Foo+Swift.h'
+  s.public_header_files = 'XRPKit/Classes/Source/c++/GeneratorWrapper+Swift.h'
   # s.frameworks = 'UIKit', 'MapKit'
   s.dependency 'Alamofire'
   s.dependency 'FutureKit'
