@@ -187,7 +187,7 @@ std::vector<std::string> findkey(std::array<std::uint8_t, 21> seed) {
             auto ptR_ = (unsigned char*)&result;
             auto sk = hexStr(ptR_, 33);
             retArray.push_back(sk);
-            std::cout  << "\n" << "\n" << sk;
+//            std::cout  << "\n" << "\n" << sk;
         }
     
         
@@ -209,7 +209,7 @@ std::vector<std::string> findkey(std::array<std::uint8_t, 21> seed) {
             auto seed = baseEncode(TOKEN_FAMILY_SEED, &SeedBuffer[0], 17, Ctx);
             retArray.push_back(seed);
             retArray.push_back(account);
-            std::cout << account << " => " << seed << "\n";
+//            std::cout << account << " => " << seed << "\n";
             
             g_FoundKey = true;
         }

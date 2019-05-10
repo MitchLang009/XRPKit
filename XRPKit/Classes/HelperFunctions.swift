@@ -16,7 +16,3 @@ public func drops2XRP(_ value: Int) -> String {
     let ret = String(xrp) + "." + String(leadingZeros) + String(drops)
     return ret
 }
-
-func myHash(data: [UInt8]) -> [UInt8] {
-    return [UInt8](Data(data.sha512().prefix(through: 31)))
-}

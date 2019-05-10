@@ -15,8 +15,8 @@ public class Ledger {
     private static let dataURL = "https://testnet.data.api.ripple.com/v2/"//"https://data.ripple.com/v2/"
     
     @available(iOS 10.0, *)
-    public func getTransactions(account: String) -> Future<[Transaction]> {
-        let p = Promise<[Transaction]>()
+    public func getTransactions(account: String) -> Future<[TransactionHist]> {
+        let p = Promise<[TransactionHist]>()
         let url = txHistURLFor(account: account)
         Alamofire.request(url, method:.get, parameters: nil, encoding: JSONEncoding.default)
             .responseJSON { response in
@@ -24,7 +24,7 @@ public class Ledger {
                     if let result = response.result.value {
                         let JSON = result as! NSDictionary
                         let _array = JSON["transactions"] as! [NSDictionary]
-                        let transactions = _array.map({ (dict) -> Transaction in
+                        let transactions = _array.map({ (dict) -> TransactionHist in
                             let tx = dict["tx"] as! NSDictionary
                             let destination = tx["Destination"] as! String
                             let source = tx["Account"] as! String
@@ -34,7 +34,7 @@ public class Ledger {
                             let date = dateFormatter.date(from: dateString)
                             let type = account == source ? "Sent" : "Received"
                             let address = account == source ? destination : source
-                            return Transaction(type: type, address: address, amount: Int(amount)!, date: date!)
+                            return TransactionHist(type: type, address: address, amount: Int(amount)!, date: date!)
                         })
                         
                         p.completeWithSuccess(transactions.sorted(by: { (lh, rh) -> Bool in
@@ -152,6 +152,7 @@ public class Ledger {
         
         Alamofire.request(Ledger.url, method:.post, parameters: parameters, encoding: JSONEncoding.default)
             .responseJSON { response in
+                print(response)
                 response.result.ifSuccess {
                     if let result = response.result.value {
                         let JSON = result as! NSDictionary
