@@ -7,8 +7,6 @@
 
 import Foundation
 import CryptoSwift
-import secp256k1
-import BigInt
 
 public enum KeyPairError: Error {
     case invalidPrivateKey
