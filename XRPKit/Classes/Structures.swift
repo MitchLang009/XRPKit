@@ -14,7 +14,7 @@ public struct Transaction {
     public var date: Date
 }
 
-public struct Account: Codable {
+public struct XRPAccount: Codable {
     public var address: String
     public var secret: String
     
@@ -46,7 +46,7 @@ public struct AccountInfo {
     public var sequence: Int
 }
 
-public struct Wallet {
+public struct XRPWallet {
     public var privateKey: String
     public var publicKey: String
     public var seed: String
