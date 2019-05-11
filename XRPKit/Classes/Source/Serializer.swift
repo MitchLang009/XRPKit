@@ -377,7 +377,7 @@ public class Serializer {
         let wrapper_key = wrapper.type
         let inner_obj = wrapper.object
         let tuples = inner_obj.keys.map { (key) -> FieldOrder in
-            let tuple = fieldSortKey(fieldName: key)
+            let tuple = self.fieldSortKey(fieldName: key)
             return FieldOrder(name: key, orderTuple: tuple)
         }
         let sortedTuples = tuples.sorted { (lh, rh) -> Bool in
@@ -524,7 +524,7 @@ public class Serializer {
         */
         
         let tuples = tx.keys.map { (key) -> FieldOrder in
-            let tuple = fieldSortKey(fieldName: key)
+            let tuple = self.fieldSortKey(fieldName: key)
             return FieldOrder(name: key, orderTuple: tuple)
         }
         let sortedTuples = tuples.sorted { (lh, rh) -> Bool in
