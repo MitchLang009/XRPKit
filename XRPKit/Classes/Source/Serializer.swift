@@ -97,40 +97,40 @@ public class Serializer {
         This field ID consists of the type code and field code, in 1 to 3 bytes
         depending on whether those values are "common" (<16) or "uncommon" (>=16)
         */
-        let field_type_name = definitions.FIELDS[fieldName]!.type
-        let type_code = definitions.TYPES[field_type_name]!
-        let field_code = definitions.FIELDS[fieldName]!.nth
+        let fieldTypeName = definitions.FIELDS[fieldName]!.type
+        let typeCode = definitions.TYPES[fieldTypeName]!
+        let fieldCode = definitions.FIELDS[fieldName]!.nth
 
         // Codes must be nonzero and fit in 1 byte
-        assert(0 < field_code && field_code <= 255)
-        assert(0 < type_code && type_code <= 255)
+        assert(0 < fieldCode && fieldCode <= 255)
+        assert(0 < typeCode && typeCode <= 255)
 
-        if type_code < 16 && field_code < 16 {
+        if typeCode < 16 && fieldCode < 16 {
             // high 4 bits is the type_code
             // low 4 bits is the field code
-            let combined_code = (type_code << 4) | field_code
-            return UInt8Byte(combined_code)
-        } else if type_code >= 16 && field_code < 16 {
+            let combinedCode = (typeCode << 4) | fieldCode
+            return UInt8Byte(combinedCode)
+        } else if typeCode >= 16 && fieldCode < 16 {
             // first 4 bits are zeroes
             // next 4 bits is field code
             // next byte is type code
-            let byte1 = UInt8Byte(field_code)
-            let byte2 = UInt8Byte(type_code)
+            let byte1 = UInt8Byte(fieldCode)
+            let byte2 = UInt8Byte(typeCode)
             return byte1 + byte2
-        } else if type_code < 16 && field_code >= 16 {
+        } else if typeCode < 16 && fieldCode >= 16 {
             // first 4 bits is type code
             // next 4 bits are zeroes
             // next byte is field code
-            let byte1 = UInt8Byte(type_code << 4)
-            let byte2 = UInt8Byte(field_code)
+            let byte1 = UInt8Byte(typeCode << 4)
+            let byte2 = UInt8Byte(fieldCode)
             return byte1 + byte2
         } else {
             // both are >= 16
             // first byte is all zeroes
             // second byte is type
             // third byte is field code
-            let byte2 = UInt8Byte(type_code)
-            let byte3 = UInt8Byte(field_code)
+            let byte2 = UInt8Byte(typeCode)
+            let byte3 = UInt8Byte(fieldCode)
             return Data([0x00]) + byte2 + byte3
         }
     }
@@ -146,20 +146,20 @@ public class Serializer {
          12480 bytes < Content length <= 918744 bytes: prefix is 3 bytes
          */
         let contents = [UInt8](contents)
-        var vl_len = contents.count
-        if vl_len <= 192 {
-            let len_byte = Data([UInt8(vl_len)])
-            return len_byte + contents
-        } else if vl_len <= 12480 {
-            vl_len -= 193
-            let byte1 = UInt8Byte((vl_len >> 8) + 193)
-            let byte2 = UInt8Byte(vl_len & 0xff)
+        var vlLength = contents.count
+        if vlLength <= 192 {
+            let lengthByte = Data([UInt8(vlLength)])
+            return lengthByte + contents
+        } else if vlLength <= 12480 {
+            vlLength -= 193
+            let byte1 = UInt8Byte((vlLength >> 8) + 193)
+            let byte2 = UInt8Byte(vlLength & 0xff)
             return byte1 + byte2 + contents
-        } else if vl_len <= 918744 {
-            vl_len -= 12481
-            let byte1 = UInt8Byte(241 + (vl_len >> 16))
-            let byte2 = UInt8Byte((vl_len >> 8) & 0xff)
-            let byte3 = UInt8Byte(vl_len & 0xff)
+        } else if vlLength <= 918744 {
+            vlLength -= 12481
+            let byte1 = UInt8Byte(241 + (vlLength >> 16))
+            let byte2 = UInt8Byte((vlLength >> 8) & 0xff)
+            let byte3 = UInt8Byte(vlLength & 0xff)
             return byte1 + byte2 + byte3 + contents
         }
         fatalError("VariableLength field must be <= 918744 bytes long")
@@ -193,18 +193,19 @@ public class Serializer {
          - Issued Currency: 64 bits of amount, followed by 160 bit currency code and
          160 bit issuer AccountID.
          */
-        var xrp_amt = Int(amount)!
-        let _edge = 100000000000000000 //10^17
-        if (xrp_amt >= 0) {
-            assert(xrp_amt <= _edge)
+        var xrpAmount = Int64(amount)!
+        let _edge: Int64 = 100000000000000000 //10^17
+        if (xrpAmount >= 0) {
+            assert(xrpAmount <= _edge)
             // set the "is positive" bit -- this is backwards from usual two's complement!
-            xrp_amt = xrp_amt | 0x4000000000000000
+            let mask: Int64 = 0x4000000000000000
+            xrpAmount = xrpAmount | mask
         } else {
-            assert(xrp_amt >= -1*_edge)
+            assert(xrpAmount >= -1*_edge)
             // convert to absolute value, leaving the "is positive" bit unset
-            xrp_amt = -xrp_amt
+            xrpAmount = -xrpAmount
         }
-        return xrp_amt.bigEndian.data
+        return xrpAmount.bigEndian.data
     }
     
     private func amountDictToBytes(dict: [String:Any]) -> Data {
@@ -212,20 +213,20 @@ public class Serializer {
             fatalError("amount must have currency, value, issuer")
         }
         
-        let issued_amt = IssuedAmount(value: dict["value"] as! String).canonicalize()
-        let currency_code = currency_code_to_bytes(code_string: dict["currency"] as! String)
-        return issued_amt + currency_code + decodeAddress(address: dict["issuer"] as! String)
+        let issuedAmount = IssuedAmount(value: dict["value"] as! String).canonicalize()
+        let currencyCode = currencyCodeToBytes(codeString: dict["currency"] as! String)
+        return issuedAmount + currencyCode + decodeAddress(address: dict["issuer"] as! String)
     }
 
-    func currency_code_to_bytes(code_string: String, xrp_ok:Bool = false) -> Data {
+    func currencyCodeToBytes(codeString: String, xrpOkay:Bool = false) -> Data {
         // NEEDS FIXED - regex is wacky
         let regex = try! NSRegularExpression(pattern: "^[A-Za-z0-9?!@#$%^&*<>(){}|]{3}$", options: [])
-        let matches = regex.matches(in: code_string, options: [], range: NSMakeRange(0,code_string.count))
+        let matches = regex.matches(in: codeString, options: [], range: NSMakeRange(0,codeString.count))
         let regex2 = try! NSRegularExpression(pattern: "^[0-9a-fA-F]{40}$", options: [])
-        let matches2 = regex2.matches(in: code_string, options: [], range: NSMakeRange(0,code_string.count))
+        let matches2 = regex2.matches(in: codeString, options: [], range: NSMakeRange(0,codeString.count))
         if matches.count != 0 {
-            if code_string == "XRP" {
-                if xrp_ok {
+            if codeString == "XRP" {
+                if xrpOkay {
                     // Rare, but when the currency code "XRP" is serialized, it's
                     // a special-case all zeroes.
                     return Data(repeating: 0, count: 20)
@@ -233,7 +234,7 @@ public class Serializer {
                 }
             }
             
-            let ascii = code_string.data(using: .nonLossyASCII)!
+            let ascii = codeString.data(using: .nonLossyASCII)!
             // standard currency codes: https://developers.ripple.com/currency-formats.html#standard-currency-codes
             // 8 bits type code (0x00)
             // 88 bits reserved (0's)
@@ -242,13 +243,13 @@ public class Serializer {
             // 24 bits reserved (0's)
             return Data(repeating: 0, count: 12) + ascii + Data(repeating: 0, count: 5)
         } else if matches2.count != 0 {
-            return Data(hex: code_string)
+            return Data(hex: codeString)
         }
         
         fatalError("invalid currency")
     }
     
-    func pathset_to_bytes(pathset: [[[String:Any]]]) -> Data {
+    func pathsetToBytes(pathset: [[[String:Any]]]) -> Data {
         /*
          Serialize a PathSet, which is an array of arrays,
          where each inner array represents one possible payment path.
@@ -292,7 +293,7 @@ public class Serializer {
             }
             if step.keys.contains("currency") {
                 typeByte |= 0x10
-                stepData.append(currency_code_to_bytes(code_string: step["currency"] as! String, xrp_ok: true))
+                stepData.append(currencyCodeToBytes(codeString: step["currency"] as! String, xrpOkay: true))
             }
             if step.keys.contains("issuer") {
                 typeByte |= 0x20
@@ -321,14 +322,14 @@ public class Serializer {
             }
         ]
         */
-        var members_as_bytes: [Data] = []
+        var membersAsBytes: [Data] = []
         for el in array {
-            let wrapper_key = el.type
-            let inner_obj = el.object
-            members_as_bytes.append(fieldToBytes(fieldName: wrapper_key, fieldVal: inner_obj))
+            let wrapperKey = el.type
+            let innerObject = el.object
+            membersAsBytes.append(fieldToBytes(fieldName: wrapperKey, fieldVal: innerObject))
         }
-        members_as_bytes.append(fieldID(fieldName: "ArrayEndMarker"))
-        return members_as_bytes.reduce(Data(), { (result, newData) -> Data in
+        membersAsBytes.append(fieldID(fieldName: "ArrayEndMarker"))
+        return membersAsBytes.reduce(Data(), { (result, newData) -> Data in
             return result + newData
         })
     }
@@ -374,9 +375,9 @@ public class Serializer {
     }
     
     private func objectToBytes(wrapper: TypeWrapper) -> Data {
-        let wrapper_key = wrapper.type
-        let inner_obj = wrapper.object
-        let tuples = inner_obj.keys.map { (key) -> FieldOrder in
+        let wrapperKey = wrapper.type
+        let innerObject = wrapper.object
+        let tuples = innerObject.keys.map { (key) -> FieldOrder in
             let tuple = self.fieldSortKey(fieldName: key)
             return FieldOrder(name: key, orderTuple: tuple)
         }
@@ -390,7 +391,7 @@ public class Serializer {
         var fieldAsBytes: [Data] = []
         for tuple in sortedTuples {
             if definitions.FIELDS[tuple.name]!.isSerialized {
-                let fieldVal = inner_obj[tuple.name]!
+                let fieldVal = innerObject[tuple.name]!
                 let bytes = fieldToBytes(fieldName: tuple.name, fieldVal: fieldVal)
                 fieldAsBytes.append(bytes)
             }
@@ -462,7 +463,7 @@ public class Serializer {
                 return self.hash256ToBytes(hexString: hexString)
             case "PathSet":
                 let pathSet = fieldVal as! [[[String:Any]]]
-                return self.pathset_to_bytes(pathset: pathSet)
+                return self.pathsetToBytes(pathset: pathSet)
             case "STArray":
                 let array = fieldVal as! [[String:Any]]
                 let wrappers: [TypeWrapper] = array.map({ (dict) -> TypeWrapper in

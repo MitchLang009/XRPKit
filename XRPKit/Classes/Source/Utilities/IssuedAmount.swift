@@ -9,8 +9,8 @@ import Foundation
 
 public class IssuedAmount {
     
-    let MIN_MANTISSA = 1000000000000000 //10^15
-    let MAX_MANTISSA = 10000000000000000 - 1 //10^16-1
+    let MIN_MANTISSA: Int64 = 1000000000000000 //10^15
+    let MAX_MANTISSA: Int64 = 10000000000000000 - 1 //10^16-1
     let MIN_EXP = -96
     let MAX_EXP = 80
     
