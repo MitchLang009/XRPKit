@@ -48,7 +48,7 @@ public class Transaction {
         
         // create another transaction instance and add the signature to the fields
         let signedTransaction = Transaction(fields: self.fields)
-        signedTransaction.fields["TxnSignature"] = signature.toHexString().uppercased() as Any
+        signedTransaction.fields["TxnSignature"] = Data(signature).toHexString().uppercased() as Any
         return signedTransaction
     }
     

@@ -39,7 +39,7 @@ Pod::Spec.new do |s|
   s.dependency 'Alamofire'
   s.dependency 'FutureKit'
   s.dependency 'secp256k1.swift'
-  s.dependency 'CryptoSwift'
+#  s.dependency 'CryptoSwift'
   s.dependency 'BigInt'
   s.dependency 'OpenSSL-Universal'
 

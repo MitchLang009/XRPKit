@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CryptoSwift
 
 public enum KeyPairError: Error {
     case invalidPrivateKey

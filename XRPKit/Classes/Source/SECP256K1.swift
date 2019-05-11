@@ -15,7 +15,7 @@ public enum SigningError: Error {
 }
 
 func sha512HalfHash(data: [UInt8]) -> [UInt8] {
-    return [UInt8](Data(data.sha512().prefix(through: 31)))
+    return [UInt8](Data(data).sha512().prefix(through: 31))
 }
 
 public class SECP256K1 {

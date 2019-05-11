@@ -75,7 +75,8 @@ public class IssuedAmount {
         - Arguably this means it's canonically written as "negative zero"
           because the encoding usually uses 1 for positive.
         */
-        var zero = UInt64(0x8000000000000000)
-        return Data(bytes: &zero , count: MemoryLayout<UInt64>.size)
+        var zero: [UInt8] = Array(repeating: 0, count: 8)
+        zero[0] = 0x80
+        return Data(zero)
     }
 }
