@@ -73,8 +73,8 @@ public class Serializer {
     
     private init() {
         do {
-            let asset = NSDataAsset(name: "definitions", bundle: Bundle(for: Serializer.self))
-            let jsonResult = try JSONSerialization.jsonObject(with: asset!.data, options: .mutableLeaves)
+            let data: Data = serializerDefinitions.data(using: .utf8)!
+            let jsonResult = try JSONSerialization.jsonObject(with: data, options: .mutableLeaves)
             if let jsonResult = jsonResult as? [String:AnyObject] {
                 self.definitions = Definitions(dict: jsonResult)
             }
