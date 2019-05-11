@@ -5,9 +5,9 @@
 [![License](https://img.shields.io/cocoapods/l/XRPKit.svg?style=flat)](https://cocoapods.org/pods/XRPKit)
 [![Platform](https://img.shields.io/cocoapods/p/XRPKit.svg?style=flat)](https://cocoapods.org/pods/XRPKit)
 
-## Example
+## NOT PRODUCTION READY 
 
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
+This library is still under development and is not ready for production use.
 
 ## Requirements
 

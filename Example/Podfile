@@ -1,6 +1,0 @@
-use_frameworks!
-target 'XRPKit_Tests' do
-  pod 'XRPKit', :path => '../'
-  
-  
-end
