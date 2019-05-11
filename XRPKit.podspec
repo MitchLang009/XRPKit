@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = { 'SWIFT_VERSION' => '5.0' }
 
   s.source_files = 'XRPKit/Classes/**/*'
-  s.resources = 'XRPKit/Assets/*.xcassets'
+#  s.resources = 'XRPKit/Assets/*.xcassets'
   # s.resource_bundles = {
   #   'XRPKit' => ['XRPKit/Assets/*.png']
   # }
