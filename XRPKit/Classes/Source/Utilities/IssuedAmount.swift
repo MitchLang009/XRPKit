@@ -1,13 +1,13 @@
 //
 //  IssuedAmount.swift
-//  Alamofire
+//  XRPKit
 //
 //  Created by Mitch Lang on 5/9/19.
 //
 
 import Foundation
 
-public class IssuedAmount {
+class IssuedAmount {
     
     let MIN_MANTISSA: Int64 = 1000000000000000 //10^15
     let MAX_MANTISSA: Int64 = 10000000000000000 - 1 //10^16-1
@@ -17,7 +17,7 @@ public class IssuedAmount {
     var stringVal: String!
     var decimal: Decimal!
     
-    public init(value: String) {
+    init(value: String) {
         self.stringVal = value
         
         if let value = Decimal(string: stringVal) {
@@ -27,7 +27,7 @@ public class IssuedAmount {
         }
     }
     
-    public func canonicalize() -> Data {
+    func canonicalize() -> Data {
         if self.decimal == 0 {
             return canonicalZeroSerial()
         }
@@ -67,7 +67,7 @@ public class IssuedAmount {
         return serial.bigEndian.data
     }
     
-    private func canonicalZeroSerial() -> Data {
+    func canonicalZeroSerial() -> Data {
         /*
         Returns canonical format for zero (a special case):
         - "Not XRP" bit = 1

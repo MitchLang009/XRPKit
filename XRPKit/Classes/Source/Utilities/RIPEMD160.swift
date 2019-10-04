@@ -7,13 +7,13 @@
 
 import Foundation
 
-public struct RIPEMD160 {
+struct RIPEMD160 {
     
     private var MDbuf: (UInt32, UInt32, UInt32, UInt32, UInt32)
     private var buffer: Data
     private var count: Int64 // Total # of bytes processed.
     
-    public init() {
+    init() {
         MDbuf = (0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0)
         buffer = Data()
         count = 0
@@ -306,7 +306,7 @@ public struct RIPEMD160 {
                  MDbuf.0 &+ bb &+ ccc)
     }
     
-    public mutating func update(data: Data) {
+    mutating func update(data: Data) {
         var X = [UInt32](repeating: 0, count: 16)
         var pos = data.startIndex
         var length = data.count
@@ -338,7 +338,7 @@ public struct RIPEMD160 {
         count += Int64(data.count)
     }
     
-    public mutating func finalize() -> Data {
+    mutating func finalize() -> Data {
         var X = [UInt32](repeating: 0, count: 16)
         /* append the bit m_n == 1 */
         buffer.append(0x80)
@@ -365,7 +365,7 @@ public struct RIPEMD160 {
     }
 }
 
-public extension RIPEMD160 {
+extension RIPEMD160 {
     
     static func hash(message: Data) -> Data {
         var md = RIPEMD160()

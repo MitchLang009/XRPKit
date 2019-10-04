@@ -1,6 +1,6 @@
 //
 //  SECP256K1.swift
-//  Alamofire
+//  XRPKit
 //
 //  Created by Mitch Lang on 5/10/19.
 //
@@ -18,9 +18,9 @@ func sha512HalfHash(data: [UInt8]) -> [UInt8] {
     return [UInt8](Data(data).sha512().prefix(through: 31))
 }
 
-public class SECP256K1 {
+class SECP256K1 {
     
-    public static func sign(data: [UInt8], privateKey: [UInt8]) throws -> [UInt8] {
+    static func sign(data: [UInt8], privateKey: [UInt8]) throws -> [UInt8] {
         
         let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))
         var sig = secp256k1_ecdsa_signature()
@@ -45,7 +45,7 @@ public class SECP256K1 {
         
     }
     
-    public static func verify(signature: [UInt8], data: [UInt8], publicKey: [UInt8]) throws -> Bool {
+    static func verify(signature: [UInt8], data: [UInt8], publicKey: [UInt8]) throws -> Bool {
         
         let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_VERIFY))
         var sig = secp256k1_ecdsa_signature()

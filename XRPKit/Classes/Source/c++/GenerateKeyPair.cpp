@@ -5,19 +5,10 @@
 //  Created by Mitch Lang on 5/7/19.
 //  Copyright © 2019 Nitch Ventures LLC. All rights reserved.
 //
+//  Source: https://github.com/segrax/xrp-vanity
 
 #include "GenerateKeyPair.hpp"
 #include <unistd.h>
-
-//#include "bn.h"
-//#include "ec.h"
-//#include "sha.h"
-//#include "ripemd.h"
-//#include "obj_mac.h"
-//#include <array>
-//#include "stdio.h"
-//#include <ctime>
-//#include <utility>
 
 const unsigned int TOKEN_ACCOUNT_ID = 0;
 const unsigned int TOKEN_FAMILY_SEED = 33;
@@ -128,17 +119,7 @@ std::vector<std::string> findkey(std::array<std::uint8_t, 21> seed) {
     
         seq = 0;
         subSeq = 0;
-        
-        {
-            SeedBuffer = seed;
-//            std::lock_guard<std::mutex> Lock(g_RandLock);
-//
-//            // Get some randoms
-//            if (!RAND_bytes(&SeedBuffer[1], 16)) {
-//                std::cout << "RAND_bytes failure\n";
-//                exit(1);
-//            }
-        }
+        SeedBuffer = seed;
         
         // generateRootDeterministicKey
         do {
@@ -153,8 +134,6 @@ std::vector<std::string> findkey(std::array<std::uint8_t, 21> seed) {
     
         // generateRootDeterministicPublicKey
         {
-            // ptRoot = generator * bnPrivateKey
-            //gpu_Mul(ptRoot, bnPrivateKey, g_CurveGen, Ctx);
             EC_POINT_mul(g_CurveGroup, ptRoot, bnPrivateKey, nullptr, nullptr, Ctx);
             EC_POINT_point2oct(g_CurveGroup, ptRoot,
                                POINT_CONVERSION_COMPRESSED, &WorkBuffer[0], 33, Ctx);
@@ -172,8 +151,6 @@ std::vector<std::string> findkey(std::array<std::uint8_t, 21> seed) {
                 
             } while (BN_is_zero(bnHash) || BN_cmp(bnHash, g_CurveOrder) >= 0);
             
-            // ptPublic = (generator * bnHash) + ptRoot
-            //gpu_Mul(ptPublic, bnHash, g_CurveGen, Ctx);
             EC_POINT_mul(g_CurveGroup, ptPublic, bnHash, nullptr, nullptr, Ctx);
             EC_POINT_add(g_CurveGroup, ptPublic, ptRoot, ptPublic, Ctx);
             EC_POINT_point2oct(g_CurveGroup, ptPublic,
@@ -187,7 +164,6 @@ std::vector<std::string> findkey(std::array<std::uint8_t, 21> seed) {
             auto ptR_ = (unsigned char*)&result;
             auto sk = hexStr(ptR_, 33);
             retArray.push_back(sk);
-//            std::cout  << "\n" << "\n" << sk;
         }
     
         
@@ -209,7 +185,6 @@ std::vector<std::string> findkey(std::array<std::uint8_t, 21> seed) {
             auto seed = baseEncode(TOKEN_FAMILY_SEED, &SeedBuffer[0], 17, Ctx);
             retArray.push_back(seed);
             retArray.push_back(account);
-//            std::cout << account << " => " << seed << "\n";
             
             g_FoundKey = true;
         }

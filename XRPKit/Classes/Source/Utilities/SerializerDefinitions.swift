@@ -1,6 +1,6 @@
 //
 //  SerializerDefinitions.swift
-//  Alamofire
+//  XRPKit
 //
 //  Created by Mitch Lang on 5/11/19.
 //

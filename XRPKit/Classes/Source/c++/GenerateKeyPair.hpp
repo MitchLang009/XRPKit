@@ -19,7 +19,6 @@
 #include <mutex>
 #include <atomic>
 #include <math.h>
-
 #include <stdio.h>
 #include <cstring>
 
