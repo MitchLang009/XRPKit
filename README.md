@@ -4,17 +4,16 @@
     <img src="logo.png" width="250px"</img> 
 </div>
 
-[![Version](https://img.shields.io/cocoapods/v/XRPKit.svg?style=flat)](https://cocoapods.org/pods/XRPKit)
+[![Version](https://img.shields.io/cocoapods/v/XRPKit.svg?style=flat&label=version)](https://cocoapods.org/pods/XRPKit)
 [![License](https://img.shields.io/cocoapods/l/XRPKit.svg?style=flat)](https://cocoapods.org/pods/XRPKit)
-[![Platform](https://img.shields.io/cocoapods/p/XRPKit.svg?style=flat)](https://cocoapods.org/pods/XRPKit)
+![badge-platforms][]
+![badge-pms][]
 
-## NOT PRODUCTION READY 
-
-This library is still under development and is not ready for production use.
-
-NOTICE: Please see https://github.com/xpring-eng/xpringkit for an official Xpring SDK that was released before this project was finished.
+XRPKit is a Swift SDK built for interacting with the XRP Ledger.  XRPKit supports offline wallet creation, offline transaction creation/signing, and submitting transactions to the XRP ledger.  XRPKit supports both the secp256k1 and ed25519 algorithms.  XRPKit is available on iOS, macOS and Linux.  WIP - use at your own risk.
 
 ## Installation
+
+#### CocoaPods
 
 XRPKit is available through [CocoaPods](https://cocoapods.org). To install
 it, simply add the following line to your Podfile:
@@ -22,6 +21,29 @@ it, simply add the following line to your Podfile:
 ```ruby
 pod 'XRPKit'
 ```
+#### Swift Package Manager
+
+You can use [The Swift Package Manager](https://swift.org/package-manager) to
+install `XRPKit` by adding it to your `Package.swift` file:
+
+```swift
+// swift-tools-version:5.1
+import PackageDescription
+
+let package = Package(
+    name: "YOUR_PROJECT_NAME",
+    dependencies: [
+    .package(url: "https://github.com/MitchLang009/XRPKit.git", from: "0.3.0"),
+    ]
+)
+```
+
+## Linux Compatibility
+
+One of the goals of this library is to provide cross-platform support for Linux and support server-side
+Swift, however some features may only be available in iOS/macOS due to a lack of Linux supported
+libraries (ex. WebSockets).  A test_linux.sh file is included that will run tests in a docker container. All
+contributions must compile on Linux.
 
 ## Wallets
 
@@ -32,7 +54,9 @@ pod 'XRPKit'
 import XRPKit
 
 // create a completely new, randomly generated wallet
-let wallet = XRPWallet()
+let wallet = XRPWallet() // defaults to secp256k1
+let wallet2 = XRPWallet(type: .secp256k1)
+let wallet3 = XRPWallet(type: .ed25519)
 
 ```
 
@@ -91,9 +115,13 @@ import XRPKit
 let wallet = try! XRPWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
 let amount = try! XRPAmount(drops: 100000000)
 
-let tx = XRPTransaction.send(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount)
-tx.onSuccess { (dict) -> () in
-    print(dict)
+XRPTransaction.send(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount) { (result) in
+    switch result {
+    case .success(let txResult):
+        print(txResult)
+    case .failure(let error):
+        print(error)
+    }
 }
 
 ```
@@ -123,8 +151,13 @@ let transaction = XRPTransaction(fields: fields)
 let signedTransaction = try! transaction.sign(wallet: wallet)
     
 // submit the transaction (online)
-_ = signedTransaction.submit().onSuccess { (dict) in
-    print(dict)
+signedTransaction.submit { (result) in
+    switch result {
+    case .success(let txResult):
+        print(txResult)
+    case .failure(let error):
+        print(error)
+    }
 }
 
 ```
@@ -150,16 +183,25 @@ let fields: [String:Any] = [
 let partialTransaction = XRPTransaction(fields: fields)
 
 // autofill missing transaction fields (online)
-_ = partialTransaction.autofill(address: wallet.address).onSuccess { (transaction) -> () in
-    
-    // sign the transaction (offline)
-    let signedTransaction = try! transaction.sign(wallet: wallet)
-    
-    // submit the transaction (online)
-    _ = signedTransaction.submit().onSuccess { (dict) in
-        print(dict)
+partialTransaction.autofill(address: wallet.address, completion: { (result) in
+    switch result {
+    case .success(let transaction):
+        // sign the transaction (offline)
+        let signedTransaction = try! transaction.sign(wallet: wallet)
+        
+        // submit the signed transaction (online)
+        signedTransaction.submit(completion: { (result) in
+            switch result {
+            case .success(let txResult):
+                print(txResult)
+            case .failure(let error):
+                print(error)
+            }
+        })
+    case .failure(let error):
+        print(error)
     }
-}
+})
 
 ```
 
@@ -199,12 +241,84 @@ _ = partialTransaction.autofill(address: wallet.address).onSuccess { (transactio
 
 import XRPKit
 
-_ = XRPLedger.getBalance(address: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK")
-    .onSuccess { (amount) -> () in
+XRPLedger.getBalance(address: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK") { (result) in
+    switch result {
+    case .success(let amount):
         print(amount.prettyPrinted()) // 1,800.000000
+    case .failure(let error):
+        print(error)
     }
+}
 
 ```
+
+## WebSocket Support
+
+WebSockets are only supported on Apple platforms through URLSessionWebSocketTask.  On Linux XRPLedger.ws is unavailable.  Support for Linux
+will be possible with the availability of a WebSocket client library.
+
+More functionality to come.
+
+### Example Command
+```swift
+
+import XRPKit
+
+XRPLedger.ws.delegate = self // XRPWebSocketDelegate
+XRPLedger.ws.connect(url: .xrpl_ws_Devnet)
+let parameters: [String: Any] = [
+    "id" : "test",
+    "method" : "fee"
+]
+let data = try! JSONSerialization.data(withJSONObject: parameters, options: [])
+XRPLedger.ws.send(data: data)
+
+```
+
+### Transaction Stream Request
+```swift
+
+import XRPKit
+
+XRPLedger.ws.delegate = self // XRPWebSocketDelegate
+XRPLedger.ws.connect(url: .xrpl_ws_Devnet)
+XRPLedger.ws.subscribe(account: "r34XnDB2zS11NZ1wKJzpU1mjWExGVugTaQ")
+
+```
+
+### Responses/Streams and XRPWebSocketDelegate
+
+```swift
+
+import XRPKit
+
+class MyClass: XRPWebSocketDelegate {
+
+    func onConnected(connection: XRPWebSocket) {
+        
+    }
+    
+    func onDisconnected(connection: XRPWebSocket, error: Error?) {
+        
+    }
+    
+    func onError(connection: XRPWebSocket, error: Error) {
+        
+    }
+    
+    func onResponse(connection: XRPWebSocket, response: XRPWebSocketResponse) {
+        
+    }
+    
+    func onStream(connection: XRPWebSocket, object: NSDictionary) {
+        
+    }
+    
+}
+
+```
+
+
 
 ## Author
 
@@ -213,3 +327,7 @@ MitchLang009, mitch.s.lang@gmail.com
 ## License
 
 XRPKit is available under the MIT license. See the LICENSE file for more info.
+
+
+[badge-pms]: https://img.shields.io/badge/supports-CocoaPods%20%7C%20SwiftPM-green.svg
+[badge-platforms]: https://img.shields.io/badge/platforms-macOS%20%7C%20iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux-lightgrey.svg
