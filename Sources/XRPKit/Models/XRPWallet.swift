@@ -18,7 +18,7 @@ public enum KeyPairError: Error {
 public enum SeedType {
     case ed25519
     case secp256k1
-    
+
     var algorithm: SigningAlgorithm.Type {
         switch self {
         case .ed25519:
@@ -27,25 +27,33 @@ public enum SeedType {
             return SECP256K1.self
         }
     }
-    
+
 }
 
 public class XRPWallet {
-    
+
     public var privateKey: String
     public var publicKey: String
     public var seed: String
     public var address: String
-    public var mnemonic: String
+    public var mnemonic: String?
+
+    private init(privateKey: String, publicKey: String, seed: String, address: String) {
+        self.privateKey = privateKey
+        self.publicKey = publicKey
+        self.seed = seed
+        self.address = address
+        self.mnemonic = nil
+    }
     
-    private init(privateKey: String, publicKey: String, seed: String, address: String, mnemonic: String = "") {
+    private init(privateKey: String, publicKey: String, seed: String, address: String, mnemonic: String) {
         self.privateKey = privateKey
         self.publicKey = publicKey
         self.seed = seed
         self.address = address
         self.mnemonic = mnemonic
     }
-    
+
     private convenience init(entropy: Entropy, type: SeedType) {
         switch type {
         case .ed25519:
@@ -61,13 +69,13 @@ public class XRPWallet {
             self.init(privateKey: keyPair.privateKey, publicKey: keyPair.publicKey, seed: seed, address: address)
         }
     }
-    
+
     /// Creates a random XRPWallet.
     public convenience init(type: SeedType = .secp256k1) {
         let entropy = Entropy()
         self.init(entropy: entropy, type: type)
     }
-    
+
     /// Generates an XRPWallet from an existing family seed.
     ///
     /// - Parameter seed: amily seed using XRP alphabet and standard format.
@@ -78,7 +86,7 @@ public class XRPWallet {
         let type = seed.prefix(3) == "sEd" ? SeedType.ed25519 : SeedType.secp256k1
         self.init(entropy: entropy, type: type)
     }
-    
+
     /// Generates an XRPWallet from an mnemonic string.
     ///
     /// - Parameter mnemonic: mnemnic phrase .
@@ -98,7 +106,7 @@ public class XRPWallet {
             mnemonic: mnemonic
         )
     }
-    
+
     /// Derive a standard XRP address from a public key.
     ///
     /// - Parameter publicKey: hexadecimal public key
@@ -111,7 +119,7 @@ public class XRPWallet {
         let address = String(base58Encoding: addrrssData)
         return address
     }
-    
+
     /// Validates a String is a valid XRP address.
     ///
     /// - Parameter address: address encoded using XRP alphabet
@@ -137,7 +145,7 @@ public class XRPWallet {
         }
         return false
     }
-    
+
     /// Validates a String is a valid XRP family seed.
     ///
     /// - Parameter seed: seed encoded using XRP alphabet
@@ -153,7 +161,7 @@ public class XRPWallet {
             return false
         }
     }
-    
+
     private static func encodeSeed(entropy: Entropy, type: SeedType) throws -> String {
         // [0x01, 0xE1, 0x4B] = sEd, [0x21] = s
         // see ripple/ripple-keypairs
@@ -163,7 +171,7 @@ public class XRPWallet {
         let versionEntropyCheck: [UInt8] = versionEntropy + check
         return String(base58Encoding: Data(versionEntropyCheck), alphabet: Base58String.xrpAlphabet)
     }
-    
+
     private static func decodeSeed(seed: String) throws -> [UInt8]? {
         // make sure seed will at least parse for checksum validation
         // FIXME: this needs work
@@ -186,14 +194,14 @@ public class XRPWallet {
         }
         throw SeedError.invalidSeed
     }
-    
-    
+
+
     public static func getSeedTypeFrom(publicKey: String) -> SeedType {
         let data = [UInt8](publicKey.hexadecimal!)
         // FIXME: Is this correct?
         return data.count == 33 && data[0] == 0xED ? .ed25519 : .secp256k1
     }
-    
+
     public static func generateRandomWallet() -> XRPWallet {
         let mnemonic = Mnemonic.create()
         return try! XRPWallet(mnemonic: mnemonic)
