@@ -27,7 +27,7 @@ public enum SeedType {
             return SECP256K1.self
         }
     }
-        
+    
 }
 
 public class XRPWallet {
@@ -36,12 +36,14 @@ public class XRPWallet {
     public var publicKey: String
     public var seed: String
     public var address: String
+    public var mnemonic: String
     
-    private init(privateKey: String, publicKey: String, seed: String, address: String) {
+    private init(privateKey: String, publicKey: String, seed: String, address: String, mnemonic: String = "") {
         self.privateKey = privateKey
         self.publicKey = publicKey
         self.seed = seed
         self.address = address
+        self.mnemonic = mnemonic
     }
     
     private convenience init(entropy: Entropy, type: SeedType) {
@@ -65,7 +67,7 @@ public class XRPWallet {
         let entropy = Entropy()
         self.init(entropy: entropy, type: type)
     }
-
+    
     /// Generates an XRPWallet from an existing family seed.
     ///
     /// - Parameter seed: amily seed using XRP alphabet and standard format.
@@ -74,6 +76,18 @@ public class XRPWallet {
         let bytes = try XRPWallet.decodeSeed(seed: seed)!
         let entropy = Entropy(bytes: bytes)
         let type = seed.prefix(3) == "sEd" ? SeedType.ed25519 : SeedType.secp256k1
+        self.init(entropy: entropy, type: type)
+    }
+    
+    /// Generates an XRPWallet from an mnemonic string.
+    ///
+    /// - Parameter mnemonic: mnemnic phrase .
+    /// - Throws: SeedError
+    public convenience init(mnemonic: String) throws {
+        let seed = Mnemonic.createSeed(mnemonic: mnemonic)
+        let bytes = [UInt8](seed)
+        let entropy = Entropy(bytes: bytes)
+        let type = SeedType.secp256k1
         self.init(entropy: entropy, type: type)
     }
     
@@ -172,4 +186,8 @@ public class XRPWallet {
         return data.count == 33 && data[0] == 0xED ? .ed25519 : .secp256k1
     }
     
+    public static func generateRandomWallet() -> XRPWallet {
+        let mnemonic = Mnemonic.create()
+        return try! XRPWallet(mnemonic: mnemonic)
+    }
 }
