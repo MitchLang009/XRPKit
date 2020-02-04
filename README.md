@@ -23,6 +23,14 @@
 
 XRPKit is a Swift SDK built for interacting with the XRP Ledger.  XRPKit supports offline wallet creation, offline transaction creation/signing, and submitting transactions to the XRP ledger.  XRPKit supports both the secp256k1 and ed25519 algorithms.  XRPKit is available on iOS, macOS and Linux.  WIP - use at your own risk.
 
+## Author
+
+MitchLang009, mitch.s.lang@gmail.com
+
+## License
+
+XRPKit is available under the MIT license. See the LICENSE file for more info.
+
 ## Installation
 
 #### CocoaPods
@@ -329,13 +337,3 @@ class MyClass: XRPWebSocketDelegate {
 }
 
 ```
-
-
-
-## Author
-
-MitchLang009, mitch.s.lang@gmail.com
-
-## License
-
-XRPKit is available under the MIT license. See the LICENSE file for more info.
