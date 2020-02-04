@@ -87,8 +87,16 @@ public class XRPWallet {
         let seed = Mnemonic.createSeed(mnemonic: mnemonic)
         let bytes = [UInt8](seed)
         let entropy = Entropy(bytes: bytes)
-        let type = SeedType.secp256k1
-        self.init(entropy: entropy, type: type)
+        let keyPair = try! SECP256K1.deriveKeyPair(seed: entropy.bytes)
+        let _seed = try! XRPWallet.encodeSeed(entropy: entropy, type: .secp256k1)
+        let address = XRPWallet.deriveAddress(publicKey: keyPair.publicKey)
+        self.init(
+            privateKey: keyPair.privateKey,
+            publicKey: keyPair.publicKey,
+            seed: _seed,
+            address: address,
+            mnemonic: mnemonic
+        )
     }
     
     /// Derive a standard XRP address from a public key.
