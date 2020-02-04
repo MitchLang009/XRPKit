@@ -1,13 +1,25 @@
+<p align="center">
+  <a href="https://github.com/MitchLang009/XRPKit">
+      <img src="logo.png" width="256" height="256" align="middle">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://cocoapods.org/pods/XRPKit">
+    <img src="https://img.shields.io/cocoapods/v/XRPKit.svg?style=flat&label=version" alt="Version">
+  </a>
+  <a href="https://cocoapods.org/pods/XRPKit">
+    <img src="https://img.shields.io/cocoapods/l/XRPKit.svg?style=flat" alt="License">
+  </a>
+  <a href="https://cocoapods.org/pods/XRPKit">
+    <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux-lightgrey.svg" alt="Platform">
+  </a>
+  <a href="https://cocoapods.org/pods/XRPKit">
+    <img src="https://img.shields.io/badge/supports-CocoaPods%20%7C%20SwiftPM-green.svg" alt="CocoaPods and SPM compatible">
+  </a>
+</p>
+
 # XRPKit
-
-<div align="left">
-    <img src="logo.png" width="250px"</img> 
-</div>
-
-[![Version](https://img.shields.io/cocoapods/v/XRPKit.svg?style=flat&label=version)](https://cocoapods.org/pods/XRPKit)
-[![License](https://img.shields.io/cocoapods/l/XRPKit.svg?style=flat)](https://cocoapods.org/pods/XRPKit)
-![badge-platforms][]
-![badge-pms][]
 
 XRPKit is a Swift SDK built for interacting with the XRP Ledger.  XRPKit supports offline wallet creation, offline transaction creation/signing, and submitting transactions to the XRP ledger.  XRPKit supports both the secp256k1 and ed25519 algorithms.  XRPKit is available on iOS, macOS and Linux.  WIP - use at your own risk.
 
@@ -327,7 +339,3 @@ MitchLang009, mitch.s.lang@gmail.com
 ## License
 
 XRPKit is available under the MIT license. See the LICENSE file for more info.
-
-
-[badge-pms]: https://img.shields.io/badge/supports-CocoaPods%20%7C%20SwiftPM-green.svg
-[badge-platforms]: https://img.shields.io/badge/platforms-macOS%20%7C%20iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux-lightgrey.svg
