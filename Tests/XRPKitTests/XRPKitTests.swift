@@ -28,7 +28,7 @@ final class XRPKitTests: XCTestCase {
             exp.fulfill()
         }
         XRPLedger.ws.delegate = wst
-        XRPLedger.ws.connect(url: .xrpl_ws_Devnet)
+        XRPLedger.ws.connect(url: .xrpl_ws_Testnet)
         let parameters: [String: Any] = [
             "id" : "test",
             "method" : "fee"
