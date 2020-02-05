@@ -54,10 +54,13 @@ final class XRPKitTests: XCTestCase {
     
     func testGenerateWalletFromInvalidSeed() {
         do {
-            let wallet = try XRPWallet(seed: "xrp")
-            XCTAssertNil(wallet)
+            let _ = try XRPWallet(seed: "xrp")
+             XCTFail("Should not generate wallet")
         } catch {
-            XCTFail("Could not generate wallet")
+            XCTAssertTrue(
+                error is SeedError,
+                "Unexpected error type: \(type(of: error))"
+            )
         }
     }
     
@@ -89,10 +92,12 @@ final class XRPKitTests: XCTestCase {
     func testGenerateWalletFromMnemonicInvalidMnemonic() {
         do {
             let mnemonic = "xrp xrp xrp xrp xrp xrp xrp xrp xrp xrp xrp xrp"
-            let wallet = try XRPWallet(mnemonic: mnemonic)
-            XCTAssertNil(wallet)
+            let _ = try XRPWallet(mnemonic: mnemonic)
         } catch {
-            XCTFail("Could not generate wallet")
+            XCTAssertTrue(
+                error is SeedError,
+                "Unexpected error type: \(type(of: error))"
+            )
         }
     }
     
@@ -495,6 +500,13 @@ final class XRPKitTests: XCTestCase {
         // generate a wallet from an existing seed
         let walletFromSeed = try! XRPWallet(seed: "snsTnz4Wj8vFnWirNbp7tnhZyCqx9")
         
+        
+        // ================================================================================================
+        // Derive wallet from a mnemonic
+        // ================================================================================================
+
+        let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+        let walletFromMnemonic = try! XRPWallet(mnemonic: mnemonic)
         
         
         // ================================================================================================

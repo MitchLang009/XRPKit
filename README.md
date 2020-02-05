@@ -91,6 +91,17 @@ let wallet = try! XRPWallet(seed: "snsTnz4Wj8vFnWirNbp7tnhZyCqx9")
 
 ```
 
+### Derive wallet from a mnemonic
+
+```swift
+
+import XRPKit
+
+let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+let walletFromMnemonic = try! XRPWallet(mnemonic: mnemonic)
+
+```
+
 ### Wallet properties
 ```swift
 
