@@ -146,7 +146,7 @@ import XRPKit
 let wallet = try! XRPWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
 let amount = try! XRPAmount(drops: 100000000)
 
-_ = XRPTransaction.send(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).map { (result) in
+_ = XRPPayment(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).send().map { (result) in
     print(result)
 }
 
@@ -171,7 +171,7 @@ let fields: [String:Any] = [
 ]
 
 // create the transaction (offline)
-let transaction = XRPTransaction(fields: fields)
+let transaction = XRPRawTransaction(fields: fields)
 
 // sign the transaction (offline)
 let signedTransaction = try! transaction.sign(wallet: wallet)
@@ -201,17 +201,13 @@ let partialFields: [String:Any] = [
 ]
 
 // create the transaction from dictionary
-let partialTransaction = XRPTransaction(fields: partialFields)
+let partialTransaction = XRPTransaction(wallet: wallet, fields: partialFields)
 
-// autofill missing transaction fields (online)
-_ = partialTransaction.autofill(address: wallet.address).map { (transaction) in
-    // sign the transaction (offline)
-    let signedTransaction = try! transaction.sign(wallet: wallet)
-    
-    // submit the signed transaction (online)
-    _ = signedTransaction.submit().map { (txResult) in
-        print(txResult)
-    }
+// autofills missing transaction fields (online)
+// signs transaction (offline)
+// submits transaction (online)
+_ = partialTransaction.send().map { (txResult) in
+    print(txResult)
 }
 
 ```

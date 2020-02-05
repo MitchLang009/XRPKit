@@ -70,7 +70,7 @@ public struct XRPLedger {
                     let date = Date(timeIntervalSince1970: 946684800+Double(timestamp))
                     let type = account == source ? "Sent" : "Received"
                     let address = account == source ? destination : source
-                    return XRPHistoricalTransaction(type: type, address: address, amount: try! XRPAmount(drops: Int(amount)!), date: date)
+                    return XRPHistoricalTransaction(type: type, address: address, amount: try! XRPAmount(drops: Int(amount)!), date: date, raw: tx)
                 })
                 promise.succeed(result: transactions.sorted(by: { (lh, rh) -> Bool in
                     lh.date > rh.date
@@ -154,6 +154,39 @@ public struct XRPLedger {
             promise.fail(error: error)
         }
         return promise.futureResult
+    }
+    
+    public static func getPendingEscrows(address: String) -> EventLoopFuture<NSDictionary> {
+        
+        let promise = eventGroup.next().newPromise(of: NSDictionary.self)
+        
+        let parameters: [String: Any] = [
+            "method" : "account_objects",
+            "params": [
+                [
+                    "account" : address,
+                    "ledger_index": "validated",
+                    "type": "escrow",
+                ]
+            ]
+        ]
+        _ = HTTP.post(url: url, parameters: parameters).map { (result) in
+            let JSON = result as! NSDictionary
+            let info = JSON["result"] as! NSDictionary
+            let status = info["status"] as! String
+            if status != "error" {
+                promise.succeed(result: info)
+            } else {
+                let errorMessage = info["error_message"] as! String
+                let error = LedgerError.runtimeError(errorMessage)
+                promise.fail(error: error)
+            }
+        }.mapIfError { (error) in
+            promise.fail(error: error)
+        }
+
+        return promise.futureResult
+        
     }
     
     public static func currentLedgerInfo() -> EventLoopFuture<XRPCurrentLedgerInfo> {

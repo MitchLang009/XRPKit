@@ -12,4 +12,5 @@ public struct XRPHistoricalTransaction {
     public var address: String
     public var amount: XRPAmount
     public var date: Date
+    public var raw: NSDictionary
 }
