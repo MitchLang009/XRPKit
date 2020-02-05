@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NIO
 #if canImport(FoundationNetworking)
     import FoundationNetworking
 #endif
@@ -13,9 +14,15 @@ import Foundation
     import CoreFoundation
 #endif
 
+let eventGroup = MultiThreadedEventLoopGroup(numberOfThreads: 4)
+
 class HTTP {
+    
     // http call to test linux cross platform
-    static func post(url: URL, parameters: [String: Any], completion: @escaping ((Result<Any, Error>) -> ())) {
+    static func post(url: URL, parameters: [String: Any]) -> EventLoopFuture<Any> {
+        
+        let promise = eventGroup.next().newPromise(of: Any.self)
+        
         let httpBody = try! JSONSerialization.data(withJSONObject: parameters, options: [])
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -25,19 +32,22 @@ class HTTP {
         let session = URLSession.shared
         session.dataTask(with: request) { (data, response, error) in
             if let error = error {
-                completion(.failure(error))
+                promise.fail(error: error)
             }
-            if let response = response {
-                //print(response)
-            }
+//            if let response = response {
+//                print(response)
+//            }
             if let data = data {
                 do {
                     let json = try JSONSerialization.jsonObject(with: data, options: [])
-                    completion(.success(json))
+                    promise.succeed(result: json)
                 } catch {
-                    completion(.failure(error))
+                    promise.fail(error: error)
                 }
             }
         }.resume()
+        
+        return promise.futureResult
+        
     }
 }

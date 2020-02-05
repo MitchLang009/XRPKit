@@ -146,13 +146,8 @@ import XRPKit
 let wallet = try! XRPWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
 let amount = try! XRPAmount(drops: 100000000)
 
-XRPTransaction.send(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount) { (result) in
-    switch result {
-    case .success(let txResult):
-        print(txResult)
-    case .failure(let error):
-        print(error)
-    }
+_ = XRPTransaction.send(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).map { (result) in
+    print(result)
 }
 
 ```
@@ -180,15 +175,10 @@ let transaction = XRPTransaction(fields: fields)
 
 // sign the transaction (offline)
 let signedTransaction = try! transaction.sign(wallet: wallet)
-    
+
 // submit the transaction (online)
-signedTransaction.submit { (result) in
-    switch result {
-    case .success(let txResult):
-        print(txResult)
-    case .failure(let error):
-        print(error)
-    }
+_ = signedTransaction.submit().map { (result) in
+    print(result)
 }
 
 ```
@@ -203,7 +193,7 @@ import XRPKit
 let wallet = try! XRPWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
 
 // dictionary containing partial transaction fields
-let fields: [String:Any] = [
+let partialFields: [String:Any] = [
     "TransactionType" : "Payment",
     "Destination" : "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK",
     "Amount" : "100000000",
@@ -211,28 +201,18 @@ let fields: [String:Any] = [
 ]
 
 // create the transaction from dictionary
-let partialTransaction = XRPTransaction(fields: fields)
+let partialTransaction = XRPTransaction(fields: partialFields)
 
 // autofill missing transaction fields (online)
-partialTransaction.autofill(address: wallet.address, completion: { (result) in
-    switch result {
-    case .success(let transaction):
-        // sign the transaction (offline)
-        let signedTransaction = try! transaction.sign(wallet: wallet)
-        
-        // submit the signed transaction (online)
-        signedTransaction.submit(completion: { (result) in
-            switch result {
-            case .success(let txResult):
-                print(txResult)
-            case .failure(let error):
-                print(error)
-            }
-        })
-    case .failure(let error):
-        print(error)
+_ = partialTransaction.autofill(address: wallet.address).map { (transaction) in
+    // sign the transaction (offline)
+    let signedTransaction = try! transaction.sign(wallet: wallet)
+    
+    // submit the signed transaction (online)
+    _ = signedTransaction.submit().map { (txResult) in
+        print(txResult)
     }
-})
+}
 
 ```
 
@@ -272,13 +252,8 @@ partialTransaction.autofill(address: wallet.address, completion: { (result) in
 
 import XRPKit
 
-XRPLedger.getBalance(address: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK") { (result) in
-    switch result {
-    case .success(let amount):
-        print(amount.prettyPrinted()) // 1,800.000000
-    case .failure(let error):
-        print(error)
-    }
+_ = XRPLedger.getBalance(address: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK").map { (amount) in
+    print(amount.prettyPrinted()) // 1,800.000000
 }
 
 ```

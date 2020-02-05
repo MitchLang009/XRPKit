@@ -2,3 +2,4 @@
 .swiftpm
 XRPKit.xcodeproj
 !.gitignore
+.DS_Store
