@@ -50,8 +50,7 @@ class WebSocket: NSObject, XRPWebSocket, URLSessionWebSocketDelegate {
     
     func connect(url: URL) {
         urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: delegateQueue)
-        let request = URLRequest(url: url)
-        webSocketTask = urlSession.webSocketTask(with: request)
+        webSocketTask = urlSession.webSocketTask(with: url)
         webSocketTask.resume()
         
         listen()
