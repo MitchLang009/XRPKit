@@ -16,6 +16,11 @@ final class XRPKitTests: XCTestCase {
         ("testSerialization", testSerialization),
         ("readMe", ReadMe),
         ("testSendTx", testSendTx),
+        ("testRippleEpoch", testRippleEpoch),
+        ("testEscrowCreateFinish", testEscrowCreateFinish),
+        ("testEscrowCreateCancel", testEscrowCreateCancel),
+        ("testGetPendingEscrows", testGetPendingEscrows),
+        ("testTransactionHistory", testTransactionHistory),
     ]
 
 //    Won't pass until Travis provides macos 10.15
@@ -43,6 +48,79 @@ final class XRPKitTests: XCTestCase {
 //        waitForExpectations(timeout: 5)
 //    }
 //    #endif
+    
+    func testRippleEpoch() {
+        let dateString = "2017-11-13T00:00:00.000Z"
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        let date = formatter.date(from: dateString)!
+        XCTAssert(date.timeIntervalSinceRippleEpoch == UInt64(563846400))
+    }
+    
+    func testEscrowCreateFinish() {
+        let exp = expectation(description: "Testing \(#function)")
+
+        let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
+        let amount = try! XRPAmount(drops: 1100000)
+        let create = XRPEscrowCreate(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(5)), cancelAfter: nil)
+        _ = create.send().map { (dict) in
+            DispatchQueue.main.asyncAfter(deadline: .now()+10) {
+                let txJSON = dict["tx_json"] as! NSDictionary
+                let sequence = txJSON["Sequence"] as! UInt32
+                print(txJSON)
+                let finish = XRPEscrowFinish(using: wallet, owner: wallet.address, offerSequence: sequence)
+                _ = finish.send().map { (dict) in
+                    print(dict)
+                    exp.fulfill()
+                }
+            }
+        }
+        waitForExpectations(timeout: 30)
+    }
+    
+    func testEscrowCreateCancel() {
+        let exp = expectation(description: "Testing \(#function)")
+
+        let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
+        let amount = try! XRPAmount(drops: 1100000)
+        let create = XRPEscrowCreate(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(4)), cancelAfter: Date().addingTimeInterval(TimeInterval(5)))
+        _ = create.send().map { (dict) in
+            DispatchQueue.main.asyncAfter(deadline: .now()+10) {
+                let txJSON = dict["tx_json"] as! NSDictionary
+                let sequence = txJSON["Sequence"] as! UInt32
+                print(txJSON)
+                let finish = XRPEscrowCancel(using: wallet, owner: wallet.address, offerSequence: sequence)
+                _ = finish.send().map { (dict) in
+                    print(dict)
+                    exp.fulfill()
+                }
+            }
+        }
+        waitForExpectations(timeout: 30)
+    }
+    
+    func testGetPendingEscrows() {
+        let exp = expectation(description: "Testing \(#function)")
+
+        let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
+        _ = XRPLedger.getPendingEscrows(address: wallet.address).map { (dict) in
+            print(dict)
+            exp.fulfill()
+        }
+        waitForExpectations(timeout: 5)
+    }
+    
+    func testTransactionHistory() {
+        let exp = expectation(description: "Testing \(#function)")
+        
+        let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
+        _ = XRPLedger.getTxs(account: wallet.address).map { (txs) in
+            print(txs)
+            exp.fulfill()
+        }
+        
+        waitForExpectations(timeout: 10)
+    }
     
     func testRandom() {
         let random = try! URandom()
@@ -315,10 +393,10 @@ final class XRPKitTests: XCTestCase {
         print(wallet.privateKey)
         print(wallet.publicKey)
         let amount = try! XRPAmount(drops: 1000000)
-        _ = XRPTransaction.send(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount).map { (result) in
-            print(result)
+        _ = XRPPayment(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount).send().map({ (dict) in
+            print(dict)
             exp.fulfill()
-        }
+        })
         
         // wait three seconds for all outstanding expectations to be fulfilled
         waitForExpectations(timeout: 10)
@@ -470,7 +548,7 @@ final class XRPKitTests: XCTestCase {
         // call my asynchronous method
         let wallet = try! XRPWallet(seed: "ssA9fFYomuCurjdHQgxdLJjz1nhNn")
         let amount = try! XRPAmount(drops: 500000000)
-        let _ = XRPTransaction.send(from: wallet, to: ED_wallet.address, amount: amount).map { (result) in
+        let _ = XRPPayment(from: wallet, to: ED_wallet.address, amount: amount).send().map { (result) in
             print(result)
             exp.fulfill()
         }
@@ -550,7 +628,7 @@ final class XRPKitTests: XCTestCase {
         // ================================================================================================
         let amount = try! XRPAmount(drops: 100000000)
         
-        _ = XRPTransaction.send(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).map { (result) in
+        _ = XRPPayment(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).send().map { (result) in
             print(result)
         }
         
@@ -571,7 +649,7 @@ final class XRPKitTests: XCTestCase {
         ]
         
         // create the transaction (offline)
-        let transaction = XRPTransaction(fields: fields)
+        let transaction = XRPRawTransaction(fields: fields)
         
         // sign the transaction (offline)
         let signedTransaction = try! transaction.sign(wallet: wallet)
@@ -595,17 +673,13 @@ final class XRPKitTests: XCTestCase {
         ]
         
         // create the transaction from dictionary
-        let partialTransaction = XRPTransaction(fields: partialFields)
+        let partialTransaction = XRPTransaction(wallet: wallet, fields: partialFields)
         
-        // autofill missing transaction fields (online)
-        _ = partialTransaction.autofill(address: wallet.address).map { (transaction) in
-            // sign the transaction (offline)
-            let signedTransaction = try! transaction.sign(wallet: wallet)
-            
-            // submit the signed transaction (online)
-            _ = signedTransaction.submit().map { (txResult) in
-                print(txResult)
-            }
+        // autofills missing transaction fields (online)
+        // signs transaction (offline)
+        // submits transaction (online)
+        _ = partialTransaction.send().map { (txResult) in
+            print(txResult)
         }
         
         

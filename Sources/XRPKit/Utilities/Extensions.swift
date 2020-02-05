@@ -128,3 +128,9 @@ public extension URL {
     static let xrpl_ws_Testnet = URL(string: "wss://s.altnet.rippletest.net/")!
     static let xrpl_ws_Devnet = URL(string: "wss://s.devnet.rippletest.net/")!
 }
+
+extension Date {
+    var timeIntervalSinceRippleEpoch: UInt64 {
+        return UInt64(self.timeIntervalSince1970) - UInt64(946684800)
+    }
+}
