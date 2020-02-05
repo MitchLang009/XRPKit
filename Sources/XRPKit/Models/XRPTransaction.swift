@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NIO
 
 let HASH_TX_SIGN: [UInt8] = [0x53,0x54,0x58, 0x00]
 let HASH_TX_SIGN_TESTNET: [UInt8] = [0x73,0x74,0x78,0x00]
@@ -19,7 +20,9 @@ public class XRPTransaction {
     }
 
     @available(iOS 10.0, *)
-    public static func send(from wallet: XRPWallet, to address: String, amount: XRPAmount, completion: @escaping ((Result<NSDictionary, Error>) -> ())) {
+    public static func send(from wallet: XRPWallet, to address: String, amount: XRPAmount) -> EventLoopFuture<NSDictionary> {
+        
+        let promise = eventGroup.next().newPromise(of: NSDictionary.self)
         
         // dictionary containing partial transaction fields
         let fields: [String:Any] = [
@@ -33,56 +36,45 @@ public class XRPTransaction {
         let partialTransaction = XRPTransaction(fields: fields)
 
         // autofill missing transaction fields (online)
-        _ = partialTransaction.autofill(address: wallet.address, completion: { (result) in
-            switch result {
-            case .success(let tx):
-                // sign the transaction (offline)
-                let signedTransaction = try! tx.sign(wallet: wallet)
-                
-                // submit the transaction (online)
-                _ = signedTransaction.submit(completion: { (result) in
-                    switch result {
-                    case .success(let dict):
-                        completion(.success(dict))
-                    case .failure(let error):
-                        completion(.failure(error))
-                    }
-                })
-                
-            case .failure(let error):
-                completion(.failure(error))
+        _ = partialTransaction.autofill(address: wallet.address).map { (tx) in
+            // sign the transaction (offline)
+            let signedTransaction = try! tx.sign(wallet: wallet)
+            
+            // submit the transaction (online)
+            _ = signedTransaction.submit().map { (dict) in
+                promise.succeed(result: dict)
+            }.mapIfError { (error) in
+                promise.fail(error: error)
             }
-        })
+        }.mapIfError { (error) in
+            promise.fail(error: error)
+        }
+        return promise.futureResult
     }
     
     // autofills account address, ledger sequence, fee, and sequence
     @available(iOS 10.0, *)
-    public func autofill(address: String, completion: @escaping ((Result<XRPTransaction, Error>) -> ())) {
-
+    public func autofill(address: String) -> EventLoopFuture<XRPTransaction> {
+        let promis = eventGroup.next().newPromise(of: XRPTransaction.self)
         // network calls to retrive current account and ledger info
-        XRPLedger.currentLedgerInfo(completion: { (result) in
-            switch result {
-            case .success(let ledgerInfo):
-                XRPLedger.getAccountInfo(account: address) { (result) in
-                    switch result {
-                    case .success(let accountInfo):
-                        // dictionary containing transaction fields
-                        let filledFields: [String:Any] = [
-                            "Account" : accountInfo.address,
-                            "LastLedgerSequence" : ledgerInfo.index+5,
-                            "Fee" : "40", // FIXME: determine fee automatically
-                            "Sequence" : accountInfo.sequence,
-                        ]
-                        self.fields = self.fields.merging(self.enforceJSONTypes(fields: filledFields)) { (_, new) in new }
-                        completion(.success(self))
-                    case .failure(let error):
-                        completion(.failure(error))
-                    }
-                }
-            case .failure(let error):
-                completion(.failure(error))
+        _ = XRPLedger.currentLedgerInfo().map { (ledgerInfo) in
+            _ = XRPLedger.getAccountInfo(account: address).map { (accountInfo) in
+                // dictionary containing transaction fields
+                let filledFields: [String:Any] = [
+                    "Account" : accountInfo.address,
+                    "LastLedgerSequence" : ledgerInfo.index+5,
+                    "Fee" : "40", // FIXME: determine fee automatically
+                    "Sequence" : accountInfo.sequence,
+                ]
+                self.fields = self.fields.merging(self.enforceJSONTypes(fields: filledFields)) { (_, new) in new }
+                promis.succeed(result: self)
+            }.mapIfError { (error) in
+                promis.fail(error: error)
             }
-        })
+        }.mapIfError { (error) in
+            promis.fail(error: error)
+        }
+        return promis.futureResult
     }
     
     
@@ -117,16 +109,15 @@ public class XRPTransaction {
         return signedTransaction
     }
     
-    public func submit(completion: @escaping ((Result<NSDictionary, Error>) -> ()))  {
+    public func submit() -> EventLoopFuture<NSDictionary> {
+        let promise = eventGroup.next().newPromise(of: NSDictionary.self)
         let tx = Serializer().serializeTx(tx: self.fields, forSigning: false).toHexString().uppercased()
-        return XRPLedger.submit(txBlob: tx) { (result) in
-            switch result {
-            case .success(let tx):
-                completion(.success(tx))
-            case .failure(let error):
-                completion(.failure(error))
-            }
+        _ = XRPLedger.submit(txBlob: tx).map { (dict) in
+            promise.succeed(result: dict)
+        }.mapIfError { (error) in
+            promise.fail(error: error)
         }
+        return promise.futureResult
     }
     
     public func getJSONString() -> String {

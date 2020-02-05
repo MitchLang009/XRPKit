@@ -280,8 +280,8 @@ final class XRPKitTests: XCTestCase {
         
         // call my asynchronous method
         let wallet = try! XRPWallet(seed: "ssExhwra2PtqmPWYQvDyHTkycsdGn")
-        XRPLedger.getTxs(account: wallet.address) { (result) in
-            print(try! result.get())
+        _ = XRPLedger.getTxs(account: wallet.address).map { (transactions) in
+            print(transactions)
             exp.fulfill()
         }
         
@@ -295,8 +295,8 @@ final class XRPKitTests: XCTestCase {
         
         // call my asynchronous method
         let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
-        XRPLedger.getAccountInfo(account: wallet.address) { (result) in
-            print(try! result.get())
+        _ = XRPLedger.getAccountInfo(account: wallet.address).map { (info) in
+            print(info)
             exp.fulfill()
         }
         
@@ -315,8 +315,8 @@ final class XRPKitTests: XCTestCase {
         print(wallet.privateKey)
         print(wallet.publicKey)
         let amount = try! XRPAmount(drops: 1000000)
-        XRPTransaction.send(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount) { (result) in
-            print(try! result.get())
+        _ = XRPTransaction.send(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount).map { (result) in
+            print(result)
             exp.fulfill()
         }
         
@@ -330,8 +330,8 @@ final class XRPKitTests: XCTestCase {
         
         // call my asynchronous method
         let wallet = try! XRPWallet(seed: "ssExhwra2PtqmPWYQvDyHTkycsdGn")
-        XRPLedger.getBalance(address: wallet.address) { (result) in
-            print(try! result.get())
+        _ = XRPLedger.getBalance(address: wallet.address).map { (result) in
+            print(result)
             exp.fulfill()
         }
         
@@ -470,8 +470,8 @@ final class XRPKitTests: XCTestCase {
         // call my asynchronous method
         let wallet = try! XRPWallet(seed: "ssA9fFYomuCurjdHQgxdLJjz1nhNn")
         let amount = try! XRPAmount(drops: 500000000)
-        let tx = XRPTransaction.send(from: wallet, to: ED_wallet.address, amount: amount) { (result) in
-            print(try! result.get())
+        let _ = XRPTransaction.send(from: wallet, to: ED_wallet.address, amount: amount).map { (result) in
+            print(result)
             exp.fulfill()
         }
         
@@ -492,6 +492,9 @@ final class XRPKitTests: XCTestCase {
         let wallet2 = XRPWallet(type: .secp256k1)
         let wallet3 = XRPWallet(type: .ed25519)
         
+        // ignore
+        _ = wallet2.address + wallet3.address
+        
         
         
         // ================================================================================================
@@ -500,6 +503,8 @@ final class XRPKitTests: XCTestCase {
         // generate a wallet from an existing seed
         let walletFromSeed = try! XRPWallet(seed: "snsTnz4Wj8vFnWirNbp7tnhZyCqx9")
         
+        // ignore
+        _ = walletFromSeed
         
         // ================================================================================================
         // Derive wallet from a mnemonic
@@ -507,6 +512,9 @@ final class XRPKitTests: XCTestCase {
 
         let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
         let walletFromMnemonic = try! XRPWallet(mnemonic: mnemonic)
+        
+        // ignore
+        _ = walletFromMnemonic
         
         
         // ================================================================================================
@@ -526,14 +534,14 @@ final class XRPKitTests: XCTestCase {
         let btc = "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2"
         let xrp = "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK"
         
-        XRPWallet.validate(address: btc) // returns false
-        XRPWallet.validate(address: xrp) // returns true
+        _ = XRPWallet.validate(address: btc) // returns false
+        _ = XRPWallet.validate(address: xrp) // returns true
         
         // Seed
         let seed = "shrKftFK3ZkMPkq4xe5wGB8HaNSLf"
         
-        XRPWallet.validate(seed: xrp) // returns false
-        XRPWallet.validate(seed: seed) // returns true
+        _ = XRPWallet.validate(seed: xrp) // returns false
+        _ = XRPWallet.validate(seed: seed) // returns true
         
         
         
@@ -542,13 +550,8 @@ final class XRPKitTests: XCTestCase {
         // ================================================================================================
         let amount = try! XRPAmount(drops: 100000000)
         
-        XRPTransaction.send(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount) { (result) in
-            switch result {
-            case .success(let txResult):
-                print(txResult)
-            case .failure(let error):
-                print(error)
-            }
+        _ = XRPTransaction.send(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).map { (result) in
+            print(result)
         }
         
         
@@ -574,13 +577,8 @@ final class XRPKitTests: XCTestCase {
         let signedTransaction = try! transaction.sign(wallet: wallet)
         
         // submit the transaction (online)
-        signedTransaction.submit { (result) in
-            switch result {
-            case .success(let txResult):
-                print(txResult)
-            case .failure(let error):
-                print(error)
-            }
+        _ = signedTransaction.submit().map { (result) in
+            print(result)
         }
         
         
@@ -600,38 +598,23 @@ final class XRPKitTests: XCTestCase {
         let partialTransaction = XRPTransaction(fields: partialFields)
         
         // autofill missing transaction fields (online)
-        partialTransaction.autofill(address: wallet.address, completion: { (result) in
-            switch result {
-            case .success(let transaction):
-                // sign the transaction (offline)
-                let signedTransaction = try! transaction.sign(wallet: wallet)
-                
-                // submit the signed transaction (online)
-                signedTransaction.submit(completion: { (result) in
-                    switch result {
-                    case .success(let txResult):
-                        print(txResult)
-                    case .failure(let error):
-                        print(error)
-                    }
-                })
-            case .failure(let error):
-                print(error)
+        _ = partialTransaction.autofill(address: wallet.address).map { (transaction) in
+            // sign the transaction (offline)
+            let signedTransaction = try! transaction.sign(wallet: wallet)
+            
+            // submit the signed transaction (online)
+            _ = signedTransaction.submit().map { (txResult) in
+                print(txResult)
             }
-        })
+        }
         
         
         
         // ================================================================================================
         // Ledger Info -> Check balance
         // ================================================================================================
-        XRPLedger.getBalance(address: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK") { (result) in
-            switch result {
-            case .success(let amount):
-                print(amount.prettyPrinted()) // 1,800.000000
-            case .failure(let error):
-                print(error)
-            }
+        _ = XRPLedger.getBalance(address: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK").map { (amount) in
+            print(amount.prettyPrinted()) // 1,800.000000
         }
         
         
