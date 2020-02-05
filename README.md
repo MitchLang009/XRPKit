@@ -8,14 +8,17 @@
   <a href="https://cocoapods.org/pods/XRPKit">
     <img src="https://img.shields.io/cocoapods/v/XRPKit.svg?style=flat&label=version" alt="Version">
   </a>
-  <a href="https://cocoapods.org/pods/XRPKit">
+  <a href="https://github.com/MitchLang009/XRPKit">
     <img src="https://img.shields.io/cocoapods/l/XRPKit.svg?style=flat" alt="License">
   </a>
-  <a href="https://cocoapods.org/pods/XRPKit">
+  <a href="https://github.com/MitchLang009/XRPKit">
     <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux-lightgrey.svg" alt="Platform">
   </a>
   <a href="https://cocoapods.org/pods/XRPKit">
     <img src="https://img.shields.io/badge/supports-CocoaPods%20%7C%20SwiftPM-green.svg" alt="CocoaPods and SPM compatible">
+  </a>
+   <a href="https://github.com/MitchLang009/XRPKit">
+    <img src="https://travis-ci.org/MitchLang009/XRPKit.svg?branch=develop" alt="Travis Build Status">
   </a>
 </p>
 
