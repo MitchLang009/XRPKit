@@ -15,9 +15,9 @@
         case hight = 256
     }
     
-    public static func create(strength: Strength = .normal, language: WordList = .english) -> String {
+    public static func create(strength: Strength = .normal, language: WordList = .english) throws -> String {
         let byteCount = strength.rawValue / 8
-        let bytes = try! Data.randomBytes(length: byteCount)
+        let bytes = try Data.randomBytes(length: byteCount)
         return create(entropy: bytes, language: language)
     }
     

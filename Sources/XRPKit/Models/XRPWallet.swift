@@ -37,16 +37,8 @@ public class XRPWallet {
     public var seed: String
     public var address: String
     public var mnemonic: String?
-
-    private init(privateKey: String, publicKey: String, seed: String, address: String) {
-        self.privateKey = privateKey
-        self.publicKey = publicKey
-        self.seed = seed
-        self.address = address
-        self.mnemonic = nil
-    }
     
-    private init(privateKey: String, publicKey: String, seed: String, address: String, mnemonic: String) {
+    private init(privateKey: String, publicKey: String, seed: String, address: String, mnemonic: String? = nil) {
         self.privateKey = privateKey
         self.publicKey = publicKey
         self.seed = seed
@@ -89,7 +81,7 @@ public class XRPWallet {
 
     /// Generates an XRPWallet from an mnemonic string.
     ///
-    /// - Parameter mnemonic: mnemnic phrase .
+    /// - Parameter mnemonic: mnemonic phrase .
     /// - Throws: SeedError
     public convenience init(mnemonic: String) throws {
         let seed = Mnemonic.createSeed(mnemonic: mnemonic)
@@ -202,8 +194,8 @@ public class XRPWallet {
         return data.count == 33 && data[0] == 0xED ? .ed25519 : .secp256k1
     }
 
-    public static func generateRandomWallet() -> XRPWallet {
-        let mnemonic = Mnemonic.create()
+    public static func generateRandomMnemonicWallet() throws -> XRPWallet {
+        let mnemonic = try Mnemonic.create()
         return try! XRPWallet(mnemonic: mnemonic)
     }
 }
