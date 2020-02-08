@@ -21,7 +21,7 @@ class HTTP {
     // http call to test linux cross platform
     static func post(url: URL, parameters: [String: Any]) -> EventLoopFuture<Any> {
         
-        let promise = eventGroup.next().newPromise(of: Any.self)
+        let promise = eventGroup.next().makePromise(of: Any.self)
         
         let httpBody = try! JSONSerialization.data(withJSONObject: parameters, options: [])
         var request = URLRequest(url: url)
@@ -32,7 +32,7 @@ class HTTP {
         let session = URLSession.shared
         session.dataTask(with: request) { (data, response, error) in
             if let error = error {
-                promise.fail(error: error)
+                promise.fail(error)
             }
 //            if let response = response {
 //                print(response)
@@ -40,9 +40,9 @@ class HTTP {
             if let data = data {
                 do {
                     let json = try JSONSerialization.jsonObject(with: data, options: [])
-                    promise.succeed(result: json)
+                    promise.succeed(json)
                 } catch {
-                    promise.fail(error: error)
+                    promise.fail(error)
                 }
             }
         }.resume()

@@ -27,7 +27,7 @@ public class XRPTransaction: XRPRawTransaction {
     // autofills ledger sequence, fee, and sequence
     public func autofill() -> EventLoopFuture<XRPTransaction> {
         
-        let promise = eventGroup.next().newPromise(of: XRPTransaction.self)
+        let promise = eventGroup.next().makePromise(of: XRPTransaction.self)
 
         // network calls to retrive current account and ledger info
         _ = XRPLedger.currentLedgerInfo().map { (ledgerInfo) in
@@ -39,19 +39,19 @@ public class XRPTransaction: XRPRawTransaction {
                     "Sequence" : accountInfo.sequence,
                 ]
                 self.fields = self.fields.merging(self.enforceJSONTypes(fields: filledFields)) { (_, new) in new }
-                promise.succeed(result: self)
-            }.mapIfError { (error) in
-                promise.fail(error: error)
+                promise.succeed(self)
+            }.recover { (error) in
+                promise.fail(error)
             }
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+        }.recover { (error) in
+            promise.fail(error)
         }
         return promise.futureResult
     }
     
     public func send() -> EventLoopFuture<NSDictionary> {
         
-        let promise = eventGroup.next().newPromise(of: NSDictionary.self)
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
         
         // autofill missing transaction fields (online)
         _ = self.autofill().map { (tx) in
@@ -60,12 +60,12 @@ public class XRPTransaction: XRPRawTransaction {
             
             // submit the transaction (online)
             _ = signedTransaction.submit().map { (dict) in
-                promise.succeed(result: dict)
-            }.mapIfError { (error) in
-                promise.fail(error: error)
+                promise.succeed(dict)
+            }.recover { (error) in
+                promise.fail(error)
             }
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+        }.recover { (error) in
+            promise.fail(error)
         }
         
         return promise.futureResult
