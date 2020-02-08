@@ -43,7 +43,7 @@ Pod::Spec.new do |s|
   s.dependency 'CryptoSwift'
   s.dependency 'BigInt'
   s.dependency 'AnyCodable-FlightSchool'
-  s.dependency 'SwiftNIO', '~> 1.12.0'
+  s.dependency 'SwiftNIO'
   
   s.static_framework = true
 

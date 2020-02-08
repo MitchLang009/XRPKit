@@ -129,6 +129,17 @@ public extension URL {
     static let xrpl_ws_Devnet = URL(string: "wss://s.devnet.rippletest.net/")!
 }
 
+public enum XRPLHost: String {
+    case xrpl_rpc_MainNetS1 = "s1.ripple.com:51234"
+    case xrpl_rpc_MainNetS2 = "s2.ripple.com:51234"
+    case xrpl_rpc_Testnet = "s.altnet.rippletest.net:51234"
+    case xrpl_rpc_Devnet = "s.devnet.rippletest.net:51234"
+    case xrpl_ws_MainnetS1 = "s1.ripple.com"
+    case xrpl_ws_MainnetS2 = "s2.ripple.com"
+    case xrpl_ws_Testnet = "s.altnet.rippletest.net"
+    case xrpl_ws_Devnet = "s.devnet.rippletest.net"
+}
+
 extension Date {
     var timeIntervalSinceRippleEpoch: UInt64 {
         return UInt64(self.timeIntervalSince1970) - UInt64(946684800)

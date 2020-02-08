@@ -49,12 +49,12 @@ public class XRPRawTransaction {
     }
     
     public func submit() -> EventLoopFuture<NSDictionary> {
-        let promise = eventGroup.next().newPromise(of: NSDictionary.self)
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
         let tx = Serializer().serializeTx(tx: self.fields, forSigning: false).toHexString().uppercased()
         _ = XRPLedger.submit(txBlob: tx).map { (tx) in
-            promise.succeed(result: tx)
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+            promise.succeed(tx)
+        }.recover { (error) in
+            promise.fail(error)
         }
         return promise.futureResult
     }

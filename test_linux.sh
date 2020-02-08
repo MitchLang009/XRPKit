@@ -5,4 +5,4 @@ docker run --rm \
     --workdir "/package" \
     swift:5.1.3 \
     /bin/bash -c \
-    "swift package resolve && swift test --build-path ./.build/linux" 
+    "swift package resolve && swift test --build-path ./.build/linux"

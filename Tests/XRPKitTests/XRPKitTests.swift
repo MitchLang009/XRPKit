@@ -4,6 +4,7 @@ import XCTest
 final class XRPKitTests: XCTestCase {
     
     static var allTests = [
+        ("testWS", testWS),
         ("fundWallet", testFundWallet),
         ("testRandom", testRandom),
         ("testGenerateWalletFromSeed", testGenerateWalletFromSeed),
@@ -23,31 +24,27 @@ final class XRPKitTests: XCTestCase {
         ("testTransactionHistory", testTransactionHistory),
     ]
 
-//    Won't pass until Travis provides macos 10.15
-//    #if !os(Linux)
-//    @available(iOS 13.0, OSX 10.15, tvOS 13.0, watchOS 6.0, *)
-//    func testWS() {
-//        // create the expectation
-//        let exp = expectation(description: "Loading stories")
-//
-//        // call my asynchronous method
-//        let wst = WebSocketTester { (info) in
-//            print(info)
-//            exp.fulfill()
-//        }
-//        XRPLedger.ws.delegate = wst
-//        XRPLedger.ws.connect(url: .xrpl_ws_Testnet)
-//        let parameters: [String: Any] = [
-//            "id" : "test",
-//            "method" : "fee"
-//        ]
-//        let data = try! JSONSerialization.data(withJSONObject: parameters, options: [])
-//        XRPLedger.ws.send(data: data)
-//
-//        // wait three seconds for all outstanding expectations to be fulfilled
-//        waitForExpectations(timeout: 5)
-//    }
-//    #endif
+    func testWS() {
+        // create the expectation
+        let exp = expectation(description: "Loading stories")
+
+        // call my asynchronous method
+        let wst = WebSocketTester { (info) in
+            print(info)
+            exp.fulfill()
+        }
+        XRPLedger.ws.delegate = wst
+        XRPLedger.ws.connect(host: XRPLHost.xrpl_ws_Testnet.rawValue)
+        let parameters: [String: Any] = [
+            "id" : "test",
+            "method" : "fee"
+        ]
+        let data = try! JSONSerialization.data(withJSONObject: parameters, options: [])
+        XRPLedger.ws.send(data: data)
+
+        // wait three seconds for all outstanding expectations to be fulfilled
+        waitForExpectations(timeout: 5)
+    }
     
     func testRippleEpoch() {
         let dateString = "2017-11-13T00:00:00.000Z"

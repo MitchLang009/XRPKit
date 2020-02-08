@@ -14,10 +14,13 @@ enum LedgerError: Error {
 
 public struct XRPLedger {
     
-    // ws
-    #if !os(Linux)
+    // WebSocket is always available through SPM
+    // WebSocket is only available through CocoaPods on newer OS
+    #if canImport(WebSocketKit)
+    public static var ws: XRPWebSocket = LinuxWebSocket()
+    #elseif !os(Linux)
     @available(iOS 13.0, OSX 10.15, tvOS 13.0, watchOS 6.0, *)
-    public static var ws: XRPWebSocket = WebSocket()
+    public static var ws: XRPWebSocket = AppleWebSocket()
     #endif
     
     // JSON-RPC
@@ -33,7 +36,7 @@ public struct XRPLedger {
     
     public static func getTxs(account: String) -> EventLoopFuture<[XRPHistoricalTransaction]> {
         
-        let promise = eventGroup.next().newPromise(of: [XRPHistoricalTransaction].self)
+        let promise = eventGroup.next().makePromise(of: [XRPHistoricalTransaction].self)
         
         let parameters: [String: Any] = [
             "method" : "account_tx",
@@ -72,16 +75,16 @@ public struct XRPLedger {
                     let address = account == source ? destination : source
                     return XRPHistoricalTransaction(type: type, address: address, amount: try! XRPAmount(drops: Int(amount)!), date: date, raw: tx)
                 })
-                promise.succeed(result: transactions.sorted(by: { (lh, rh) -> Bool in
+                promise.succeed(transactions.sorted(by: { (lh, rh) -> Bool in
                     lh.date > rh.date
                 }))
             } else {
                 let errorMessage = info["error_message"] as! String
                 let error = LedgerError.runtimeError(errorMessage)
-                promise.fail(error: error)
+                promise.fail(error)
             }
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+        }.recover { (error) in
+            promise.fail(error)
         }
         
         return promise.futureResult
@@ -90,7 +93,7 @@ public struct XRPLedger {
     
     public static func getBalance(address: String) -> EventLoopFuture<XRPAmount> {
         
-        let promise = eventGroup.next().newPromise(of: XRPAmount.self)
+        let promise = eventGroup.next().makePromise(of: XRPAmount.self)
         
         let parameters: [String: Any] = [
             "method" : "account_info",
@@ -108,21 +111,21 @@ public struct XRPLedger {
                     let account = info["account_data"] as! NSDictionary
                     let balance = account["Balance"] as! String
                     let amount = try! XRPAmount(drops: Int(balance)!)
-                    promise.succeed(result: amount)
+                    promise.succeed( amount)
                 } else {
                     let errorMessage = info["error_message"] as! String
                     let error = LedgerError.runtimeError(errorMessage)
-                    promise.fail(error: error)
+                    promise.fail(error)
                 }
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+        }.recover { (error) in
+            promise.fail(error)
         }
         
         return promise.futureResult
     }
     
     public static func getAccountInfo(account: String) -> EventLoopFuture<XRPAccountInfo> {
-        let promise = eventGroup.next().newPromise(of: XRPAccountInfo.self)
+        let promise = eventGroup.next().makePromise(of: XRPAccountInfo.self)
         let parameters: [String: Any] = [
             "method" : "account_info",
             "params": [
@@ -144,21 +147,21 @@ public struct XRPLedger {
                     let address = account["Account"] as! String
                     let sequence = account["Sequence"] as! Int
                     let accountInfo = XRPAccountInfo(address: address, drops: Int(balance)!, sequence: sequence)
-                    promise.succeed(result: accountInfo)
+                    promise.succeed( accountInfo)
                 } else {
                     let errorMessage = info["error_message"] as! String
                     let error = LedgerError.runtimeError(errorMessage)
-                    promise.fail(error: error)
+                    promise.fail(error)
                 }
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+        }.recover { (error) in
+            promise.fail(error)
         }
         return promise.futureResult
     }
     
     public static func getPendingEscrows(address: String) -> EventLoopFuture<NSDictionary> {
         
-        let promise = eventGroup.next().newPromise(of: NSDictionary.self)
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
         
         let parameters: [String: Any] = [
             "method" : "account_objects",
@@ -175,14 +178,14 @@ public struct XRPLedger {
             let info = JSON["result"] as! NSDictionary
             let status = info["status"] as! String
             if status != "error" {
-                promise.succeed(result: info)
+                promise.succeed( info)
             } else {
                 let errorMessage = info["error_message"] as! String
                 let error = LedgerError.runtimeError(errorMessage)
-                promise.fail(error: error)
+                promise.fail(error)
             }
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+        }.recover { (error) in
+            promise.fail(error)
         }
 
         return promise.futureResult
@@ -190,7 +193,7 @@ public struct XRPLedger {
     }
     
     public static func currentLedgerInfo() -> EventLoopFuture<XRPCurrentLedgerInfo> {
-        let promise = eventGroup.next().newPromise(of: XRPCurrentLedgerInfo.self)
+        let promise = eventGroup.next().makePromise(of: XRPCurrentLedgerInfo.self)
         let parameters: [String: Any] = [
             "method" : "fee"
         ]
@@ -202,15 +205,15 @@ public struct XRPLedger {
             let max = drops["median_fee"] as! String
             let ledger = info["ledger_current_index"] as! Int
             let ledgerInfo = XRPCurrentLedgerInfo(index: ledger, minFee: Int(min)!, maxFee: Int(max)!)
-            promise.succeed(result: ledgerInfo)
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+            promise.succeed( ledgerInfo)
+        }.recover { (error) in
+            promise.fail(error)
         }
         return promise.futureResult
     }
     
     public static func submit(txBlob: String) -> EventLoopFuture<NSDictionary> {
-        let promise = eventGroup.next().newPromise(of: NSDictionary.self)
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
         let parameters: [String: Any] = [
             "method" : "submit",
             "params": [
@@ -222,9 +225,9 @@ public struct XRPLedger {
         _ = HTTP.post(url: url, parameters: parameters).map { (result) in
             let JSON = result as! NSDictionary
             let info = JSON["result"] as! NSDictionary
-            promise.succeed(result: info)
-        }.mapIfError { (error) in
-            promise.fail(error: error)
+            promise.succeed( info)
+        }.recover { (error) in
+            promise.fail(error)
         }
         return promise.futureResult
     }
