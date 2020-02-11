@@ -159,6 +159,39 @@ public struct XRPLedger {
         return promise.futureResult
     }
     
+    public static func getSignerList(address: String) -> EventLoopFuture<NSDictionary> {
+        
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
+        
+        let parameters: [String: Any] = [
+            "method" : "account_objects",
+            "params": [
+                [
+                    "account" : address,
+                    "ledger_index": "validated",
+                    "type": "signer_list",
+                ]
+            ]
+        ]
+        _ = HTTP.post(url: url, parameters: parameters).map { (result) in
+            let JSON = result as! NSDictionary
+            let info = JSON["result"] as! NSDictionary
+            let status = info["status"] as! String
+            if status != "error" {
+                promise.succeed( info)
+            } else {
+                let errorMessage = info["error_message"] as! String
+                let error = LedgerError.runtimeError(errorMessage)
+                promise.fail(error)
+            }
+        }.recover { (error) in
+            promise.fail(error)
+        }
+
+        return promise.futureResult
+        
+    }
+    
     public static func getPendingEscrows(address: String) -> EventLoopFuture<NSDictionary> {
         
         let promise = eventGroup.next().makePromise(of: NSDictionary.self)
