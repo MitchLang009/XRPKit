@@ -25,7 +25,7 @@ public class XRPTransaction: XRPRawTransaction {
     }
     
     // autofills ledger sequence, fee, and sequence
-    public func autofill() -> EventLoopFuture<XRPTransaction> {
+    func autofill() -> EventLoopFuture<XRPTransaction> {
         
         let promise = eventGroup.next().makePromise(of: XRPTransaction.self)
 

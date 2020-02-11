@@ -37,6 +37,10 @@ public class XRPWallet {
     public var seed: String
     public var address: String
     public var mnemonic: String?
+    internal var accountID: [UInt8] {
+        let accountID = RIPEMD160.hash(message: Data(hex: self.publicKey).sha256())
+        return [UInt8](accountID)
+    }
     
     private init(privateKey: String, publicKey: String, seed: String, address: String, mnemonic: String? = nil) {
         self.privateKey = privateKey
