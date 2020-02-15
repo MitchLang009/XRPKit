@@ -457,7 +457,7 @@ final class XRPKitTests: XCTestCase {
         print(wallet.privateKey)
         print(wallet.publicKey)
         let amount = try! XRPAmount(drops: 1000000)
-        _ = XRPPayment(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount).send().map({ (dict) in
+        _ = XRPPayment(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, destinationTag: 43, sourceTag: 67).send().map({ (dict) in
             print(dict)
             exp.fulfill()
         })

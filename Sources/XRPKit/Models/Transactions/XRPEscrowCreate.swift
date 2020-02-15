@@ -9,7 +9,7 @@ import Foundation
 
 public class XRPEscrowCreate: XRPTransaction {
     
-    public init(from wallet: XRPWallet, to address: String, amount: XRPAmount, finishAfter: Date, cancelAfter: Date?) {
+    public init(from wallet: XRPWallet, to address: String, amount: XRPAmount, finishAfter: Date, cancelAfter: Date?, destinationTag: UInt32? = nil, sourceTag : UInt32? = nil) {
         
         // dictionary containing partial transaction fields
         var _fields: [String:Any] = [
@@ -22,6 +22,14 @@ public class XRPEscrowCreate: XRPTransaction {
         if let cancelAfter = cancelAfter {
             assert(cancelAfter > finishAfter)
             _fields["CancelAfter"] = cancelAfter.timeIntervalSinceRippleEpoch
+        }
+        
+        if let destinationTag = destinationTag {
+            _fields["DestinationTag"] = destinationTag
+        }
+        
+        if let sourceTag = sourceTag {
+            _fields["SourceTag"] = sourceTag
         }
         
         super.init(wallet: wallet, fields: _fields)
