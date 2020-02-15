@@ -109,11 +109,30 @@ public class XRPWallet {
     /// - Returns: standard XRP address encoded using XRP alphabet
     ///
     public static func deriveAddress(publicKey: String) -> String {
-        let accountID = Data([0x00]) + RIPEMD160.hash(message: Data(hex: publicKey).sha256())
-        let checksum = Data(accountID).sha256().sha256().prefix(through: 3)
-        let addrrssData = accountID + checksum
+        let accountID = RIPEMD160.hash(message: Data(hex: publicKey).sha256())
+        let prefixedAccountID = Data([0x00]) + accountID
+        let checksum = Data(prefixedAccountID).sha256().sha256().prefix(through: 3)
+        let addrrssData = prefixedAccountID + checksum
         let address = String(base58Encoding: addrrssData)
         return address
+    }
+    
+    static func encodeXAddress(address: String, tag: UInt32? = nil, test: Bool = false ) -> String {
+        let accountID = XRPWallet.accountID(for: address)
+        let prefix: [UInt8] = test ? [0x04, 0x93] : [0x05, 0x44]
+        let flags: [UInt8] = tag == nil ? [0x00] : [0x01]
+        let tag = tag == nil ? [UInt8](UInt64(0).data) : [UInt8](UInt64(tag!).data)
+        let concatenated = prefix + accountID + flags + tag
+        let check = [UInt8](Data(concatenated).sha256().sha256().prefix(through: 3))
+        let concatenatedCheck: [UInt8] = concatenated + check
+        return String(base58Encoding: Data(concatenatedCheck), alphabet: Base58String.xrpAlphabet)
+    }
+    
+    static func accountID(for address: String) ->  [UInt8] {
+        let data = Data(base58Decoding: address)!
+        let withoutCheck = data.prefix(data.count-4)
+        let withoutPrefix = withoutCheck.suffix(from: 1)
+        return withoutPrefix.bytes
     }
 
     /// Validates a String is a valid XRP address.

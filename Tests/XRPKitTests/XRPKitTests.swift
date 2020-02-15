@@ -466,6 +466,67 @@ final class XRPKitTests: XCTestCase {
         waitForExpectations(timeout: 10)
     }
     
+    func testAccountID() {
+        let wallet = XRPWallet()
+        let a = Data(wallet.accountID).hexadecimal.uppercased()
+        let b = Data(XRPWallet.accountID(for: wallet.address)).hexadecimal.uppercased()
+        XCTAssert(a == b)
+    }
+    
+    func testXAddress() {
+        let mainNetTests = [
+        [
+        nil,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV5fdx1mHp98tDMoQXb",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A000000000000000000",
+        ],[
+        0,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV8AqEL4xcZj5whKbmc",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A010000000000000000",
+        ],[
+        1,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV8xvjGQTYPiAx6gwDC",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A010100000000000000",
+        ],[
+        2,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV8zpDURx7DzBCkrQE7",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A010200000000000000",
+        ],[
+        32,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtVoYiC9UvKfjKar4LJe",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A012000000000000000",
+        ],[
+        276,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtVoKj3MnFGMXEFMnvJV",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A011401000000000000",
+        ],[
+        65591,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtVozpjdhPQVdt3ghaWw",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A013700010000000000",
+        ],[
+        16781933,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtVqrDUk2vDpkTjPsY73",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A016D12000100000000",
+        ],[
+        4294967294,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV1kAsixQTdMjbWi39u",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A01FEFFFFFF00000000",
+        ],[
+        4294967295,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV18pX8yuPT7y4xaEHi",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A01FFFFFFFF00000000",
+        ]
+        ]
+        let rootAccount = "rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf"
+        for test in mainNetTests {
+            let _tag = test[0] as? Int
+            let tag = _tag == nil ? nil : UInt32(String(_tag!))
+            let x_address = XRPWallet.encodeXAddress(address: rootAccount, tag: tag, test: false)
+            XCTAssert(test[1] as! String == x_address)
+        }
+        
+    }
+    
     func testGetBalance() {
         // create the expectation
         let exp = expectation(description: "Loading stories")
