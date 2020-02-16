@@ -126,7 +126,8 @@ final class XRPKitTests: XCTestCase {
 
         let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
         let amount = try! XRPAmount(drops: 1100000)
-        let create = XRPEscrowCreate(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(5)), cancelAfter: nil)
+        let address = try! XRPAddress(rAddress: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp")
+        let create = XRPEscrowCreate(from: wallet, to: address, amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(5)), cancelAfter: nil)
         _ = create.send().map { (dict) in
             DispatchQueue.main.asyncAfter(deadline: .now()+10) {
                 let txJSON = dict["tx_json"] as! NSDictionary
@@ -147,7 +148,8 @@ final class XRPKitTests: XCTestCase {
 
         let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
         let amount = try! XRPAmount(drops: 1100000)
-        let create = XRPEscrowCreate(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(4)), cancelAfter: Date().addingTimeInterval(TimeInterval(5)))
+        let address = try! XRPAddress(rAddress: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp")
+        let create = XRPEscrowCreate(from: wallet, to: address, amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(4)), cancelAfter: Date().addingTimeInterval(TimeInterval(5)))
         _ = create.send().map { (dict) in
             DispatchQueue.main.asyncAfter(deadline: .now()+10) {
                 let txJSON = dict["tx_json"] as! NSDictionary
@@ -457,7 +459,8 @@ final class XRPKitTests: XCTestCase {
         print(wallet.privateKey)
         print(wallet.publicKey)
         let amount = try! XRPAmount(drops: 1000000)
-        _ = XRPPayment(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, destinationTag: 43, sourceTag: 67).send().map({ (dict) in
+        let address = try! XRPAddress(rAddress: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", tag: 43)
+        _ = XRPPayment(from: wallet, to: address, amount: amount, sourceTag: 67).send().map({ (dict) in
             print(dict)
             exp.fulfill()
         })
@@ -521,9 +524,14 @@ final class XRPKitTests: XCTestCase {
         for test in mainNetTests {
             let _tag = test[0] as? Int
             let tag = _tag == nil ? nil : UInt32(String(_tag!))
-            let x_address = XRPWallet.encodeXAddress(address: rootAccount, tag: tag, test: false)
+            let x_address = XRPAddress.encodeXAddress(rAddress: rootAccount, tag: tag, test: false)
             XCTAssert(test[1] as! String == x_address)
+            
+            let xrpAddress = try! XRPAddress.decodeXAddress(xAddress: x_address)
+            XCTAssert(xrpAddress.tag == tag && xrpAddress.rAddress == rootAccount)
         }
+        XCTAssert(XRPAddress.encodeXAddress(rAddress: rootAccount, tag: 4294967295, test: false) == "XVLhHMPHU98es4dbozjVtdWzVrDjtV18pX8yuPT7y4xaEHi")
+        XCTAssert(XRPAddress.encodeXAddress(rAddress: rootAccount, tag: 4294967294, test: false) == "XVLhHMPHU98es4dbozjVtdWzVrDjtV1kAsixQTdMjbWi39u")
         
     }
     
@@ -673,7 +681,8 @@ final class XRPKitTests: XCTestCase {
         // call my asynchronous method
         let wallet = try! XRPWallet(seed: "ssA9fFYomuCurjdHQgxdLJjz1nhNn")
         let amount = try! XRPAmount(drops: 500000000)
-        let _ = XRPPayment(from: wallet, to: ED_wallet.address, amount: amount).send().map { (result) in
+        let address = try! XRPAddress(rAddress: ED_wallet.address)
+        let _ = XRPPayment(from: wallet, to: address, amount: amount).send().map { (result) in
             print(result)
             exp.fulfill()
         }
@@ -752,8 +761,9 @@ final class XRPKitTests: XCTestCase {
         // Transactions -> Sending XRP (offline signing)
         // ================================================================================================
         let amount = try! XRPAmount(drops: 100000000)
+        let address = try! XRPAddress(rAddress: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK")
         
-        _ = XRPPayment(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).send().map { (result) in
+        _ = XRPPayment(from: wallet, to: address, amount: amount).send().map { (result) in
             print(result)
         }
         

@@ -117,17 +117,6 @@ public class XRPWallet {
         return address
     }
     
-    static func encodeXAddress(address: String, tag: UInt32? = nil, test: Bool = false ) -> String {
-        let accountID = XRPWallet.accountID(for: address)
-        let prefix: [UInt8] = test ? [0x04, 0x93] : [0x05, 0x44]
-        let flags: [UInt8] = tag == nil ? [0x00] : [0x01]
-        let tag = tag == nil ? [UInt8](UInt64(0).data) : [UInt8](UInt64(tag!).data)
-        let concatenated = prefix + accountID + flags + tag
-        let check = [UInt8](Data(concatenated).sha256().sha256().prefix(through: 3))
-        let concatenatedCheck: [UInt8] = concatenated + check
-        return String(base58Encoding: Data(concatenatedCheck), alphabet: Base58String.xrpAlphabet)
-    }
-    
     static func accountID(for address: String) ->  [UInt8] {
         let data = Data(base58Decoding: address)!
         let withoutCheck = data.prefix(data.count-4)

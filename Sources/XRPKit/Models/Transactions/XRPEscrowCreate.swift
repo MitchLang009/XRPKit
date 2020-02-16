@@ -9,14 +9,14 @@ import Foundation
 
 public class XRPEscrowCreate: XRPTransaction {
     
-    public init(from wallet: XRPWallet, to address: String, amount: XRPAmount, finishAfter: Date, cancelAfter: Date?, destinationTag: UInt32? = nil, sourceTag : UInt32? = nil) {
+    public init(from wallet: XRPWallet, to address: XRPAddress, amount: XRPAmount, finishAfter: Date, cancelAfter: Date?, sourceTag : UInt32? = nil) {
         
         // dictionary containing partial transaction fields
         var _fields: [String:Any] = [
             "TransactionType": "EscrowCreate",
             "FinishAfter": finishAfter.timeIntervalSinceRippleEpoch,
             "Amount": String(amount.drops),
-            "Destination": address,
+            "Destination": address.rAddress,
         ]
         
         if let cancelAfter = cancelAfter {
@@ -24,7 +24,7 @@ public class XRPEscrowCreate: XRPTransaction {
             _fields["CancelAfter"] = cancelAfter.timeIntervalSinceRippleEpoch
         }
         
-        if let destinationTag = destinationTag {
+        if let destinationTag = address.tag {
             _fields["DestinationTag"] = destinationTag
         }
         

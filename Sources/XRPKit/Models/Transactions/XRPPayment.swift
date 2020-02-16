@@ -9,15 +9,15 @@ import Foundation
 
 public class XRPPayment: XRPTransaction {
     
-    public init(from wallet: XRPWallet, to address: String, amount: XRPAmount, destinationTag: UInt32? = nil, sourceTag : UInt32? = nil) {
+    public init(from wallet: XRPWallet, to address: XRPAddress, amount: XRPAmount, sourceTag : UInt32? = nil) {
         var _fields: [String:Any] = [
             "TransactionType" : "Payment",
-            "Destination" : address,
+            "Destination" : address.rAddress,
             "Amount" : String(amount.drops),
             "Flags" : UInt64(2147483648),
         ]
         
-        if let destinationTag = destinationTag {
+        if let destinationTag = address.tag {
             _fields["DestinationTag"] = destinationTag
         }
         
