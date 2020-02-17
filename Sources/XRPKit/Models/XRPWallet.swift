@@ -109,11 +109,19 @@ public class XRPWallet {
     /// - Returns: standard XRP address encoded using XRP alphabet
     ///
     public static func deriveAddress(publicKey: String) -> String {
-        let accountID = Data([0x00]) + RIPEMD160.hash(message: Data(hex: publicKey).sha256())
-        let checksum = Data(accountID).sha256().sha256().prefix(through: 3)
-        let addrrssData = accountID + checksum
+        let accountID = RIPEMD160.hash(message: Data(hex: publicKey).sha256())
+        let prefixedAccountID = Data([0x00]) + accountID
+        let checksum = Data(prefixedAccountID).sha256().sha256().prefix(through: 3)
+        let addrrssData = prefixedAccountID + checksum
         let address = String(base58Encoding: addrrssData)
         return address
+    }
+    
+    static func accountID(for address: String) ->  [UInt8] {
+        let data = Data(base58Decoding: address)!
+        let withoutCheck = data.prefix(data.count-4)
+        let withoutPrefix = withoutCheck.suffix(from: 1)
+        return withoutPrefix.bytes
     }
 
     /// Validates a String is a valid XRP address.

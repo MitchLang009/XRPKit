@@ -9,6 +9,7 @@ final class XRPKitTests: XCTestCase {
         ("testRandom", testRandom),
         ("testGenerateWalletFromSeed", testGenerateWalletFromSeed),
         ("testGenerateWalletFromMnemonicNoDerivationPath", testGenerateWalletFromMnemonicNoDerivationPath),
+        ("testGenerateWalletFromMnemonicInvalidMnemonic", testGenerateWalletFromMnemonicInvalidMnemonic),
         ("testSecp256k1DerivationPath", testSecp256k1DerivationPath),
         ("testED25519DerivationPath", testED25519DerivationPath),
         ("testGetTxxs", testGetTxxs),
@@ -18,13 +19,16 @@ final class XRPKitTests: XCTestCase {
         ("readMe", ReadMe),
         ("testSendTx", testSendTx),
         ("testRippleEpoch", testRippleEpoch),
-        ("testEscrowCreateFinish", testEscrowCreateFinish),
-        ("testEscrowCreateCancel", testEscrowCreateCancel),
+//        ("testEscrowCreateFinish", testEscrowCreateFinish),
+//        ("testEscrowCreateCancel", testEscrowCreateCancel),
         ("testGetPendingEscrows", testGetPendingEscrows),
         ("testTransactionHistory", testTransactionHistory),
         ("testDisableMaster", testDisableMaster),
         ("testGetSignerList", testGetSignerList),
         ("testMultiSignEnableMaster", testMultiSignEnableMaster),
+        ("testSignerListSet", testSignerListSet),
+        ("testAccountID", testAccountID),
+        ("testXAddress", testXAddress),
     ]
     
     func testMultiSignEnableMaster() {
@@ -126,7 +130,8 @@ final class XRPKitTests: XCTestCase {
 
         let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
         let amount = try! XRPAmount(drops: 1100000)
-        let create = XRPEscrowCreate(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(5)), cancelAfter: nil)
+        let address = try! XRPAddress(rAddress: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp")
+        let create = XRPEscrowCreate(from: wallet, to: address, amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(5)), cancelAfter: nil)
         _ = create.send().map { (dict) in
             DispatchQueue.main.asyncAfter(deadline: .now()+10) {
                 let txJSON = dict["tx_json"] as! NSDictionary
@@ -147,7 +152,8 @@ final class XRPKitTests: XCTestCase {
 
         let wallet = try! XRPWallet(seed: "sEdVLSxBzx6Xi9XTqYj6a88epDSETKR")
         let amount = try! XRPAmount(drops: 1100000)
-        let create = XRPEscrowCreate(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(4)), cancelAfter: Date().addingTimeInterval(TimeInterval(5)))
+        let address = try! XRPAddress(rAddress: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp")
+        let create = XRPEscrowCreate(from: wallet, to: address, amount: amount, finishAfter: Date().addingTimeInterval(TimeInterval(4)), cancelAfter: Date().addingTimeInterval(TimeInterval(5)))
         _ = create.send().map { (dict) in
             DispatchQueue.main.asyncAfter(deadline: .now()+10) {
                 let txJSON = dict["tx_json"] as! NSDictionary
@@ -457,13 +463,83 @@ final class XRPKitTests: XCTestCase {
         print(wallet.privateKey)
         print(wallet.publicKey)
         let amount = try! XRPAmount(drops: 1000000)
-        _ = XRPPayment(from: wallet, to: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", amount: amount, destinationTag: 43, sourceTag: 67).send().map({ (dict) in
+        let address = try! XRPAddress(rAddress: "rUQyLm1pnvFPcYgAFFVu7MvBgEYqWEfrjp", tag: 43)
+        _ = XRPPayment(from: wallet, to: address, amount: amount, sourceTag: 67).send().map({ (dict) in
             print(dict)
             exp.fulfill()
         })
         
         // wait three seconds for all outstanding expectations to be fulfilled
         waitForExpectations(timeout: 10)
+    }
+    
+    func testAccountID() {
+        let wallet = XRPWallet()
+        let a = Data(wallet.accountID).hexadecimal.uppercased()
+        let b = Data(XRPWallet.accountID(for: wallet.address)).hexadecimal.uppercased()
+        XCTAssert(a == b)
+    }
+    
+    func testXAddress() {
+        let mainNetTests = [
+        [
+        nil,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV5fdx1mHp98tDMoQXb",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A000000000000000000",
+        ],[
+        0,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV8AqEL4xcZj5whKbmc",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A010000000000000000",
+        ],[
+        1,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV8xvjGQTYPiAx6gwDC",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A010100000000000000",
+        ],[
+        2,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV8zpDURx7DzBCkrQE7",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A010200000000000000",
+        ],[
+        32,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtVoYiC9UvKfjKar4LJe",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A012000000000000000",
+        ],[
+        276,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtVoKj3MnFGMXEFMnvJV",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A011401000000000000",
+        ],[
+        65591,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtVozpjdhPQVdt3ghaWw",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A013700010000000000",
+        ],[
+        16781933,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtVqrDUk2vDpkTjPsY73",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A016D12000100000000",
+        ],[
+        4294967294,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV1kAsixQTdMjbWi39u",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A01FEFFFFFF00000000",
+        ],[
+        4294967295,
+        "XVLhHMPHU98es4dbozjVtdWzVrDjtV18pX8yuPT7y4xaEHi",
+        "A066C988C712815CC37AF71472B7CBBBD4E2A0A01FFFFFFFF00000000",
+        ]
+        ]
+        let rootAccount = "rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf"
+        for test in mainNetTests {
+            let _tag = test[0] as? Int
+            let tag = _tag == nil ? nil : UInt32(String(_tag!))
+            let x_address = XRPAddress.encodeXAddress(rAddress: rootAccount, tag: tag, test: false)
+            XCTAssert(test[1] as! String == x_address)
+            
+            let xrpAddress = try! XRPAddress.decodeXAddress(xAddress: x_address)
+            XCTAssert(xrpAddress.tag == tag && xrpAddress.rAddress == rootAccount)
+        }
+        XCTAssert(XRPAddress.encodeXAddress(rAddress: rootAccount, tag: 4294967295, test: false) == "XVLhHMPHU98es4dbozjVtdWzVrDjtV18pX8yuPT7y4xaEHi")
+        XCTAssert(XRPAddress.encodeXAddress(rAddress: rootAccount, tag: 4294967294, test: false) == "XVLhHMPHU98es4dbozjVtdWzVrDjtV1kAsixQTdMjbWi39u")
+        XCTAssert(XRPAddress.encodeXAddress(rAddress: "rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY", tag: 12345, test: false) == "XV5sbjUmgPpvXv4ixFWZ5ptAYZ6PD28Sq49uo34VyjnmK5H")
+        let address = try! XRPAddress.decodeXAddress(xAddress: "XV5sbjUmgPpvXv4ixFWZ5ptAYZ6PD28Sq49uo34VyjnmK5H")
+        XCTAssert(address.rAddress == "rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY" && address.tag == 12345)
+        
     }
     
     func testGetBalance() {
@@ -612,7 +688,8 @@ final class XRPKitTests: XCTestCase {
         // call my asynchronous method
         let wallet = try! XRPWallet(seed: "ssA9fFYomuCurjdHQgxdLJjz1nhNn")
         let amount = try! XRPAmount(drops: 500000000)
-        let _ = XRPPayment(from: wallet, to: ED_wallet.address, amount: amount).send().map { (result) in
+        let address = try! XRPAddress(rAddress: ED_wallet.address)
+        let _ = XRPPayment(from: wallet, to: address, amount: amount).send().map { (result) in
             print(result)
             exp.fulfill()
         }
@@ -691,8 +768,9 @@ final class XRPKitTests: XCTestCase {
         // Transactions -> Sending XRP (offline signing)
         // ================================================================================================
         let amount = try! XRPAmount(drops: 100000000)
+        let address = try! XRPAddress(rAddress: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK")
         
-        _ = XRPPayment(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).send().map { (result) in
+        _ = XRPPayment(from: wallet, to: address, amount: amount).send().map { (result) in
             print(result)
         }
         
