@@ -9,6 +9,7 @@ final class XRPKitTests: XCTestCase {
         ("testRandom", testRandom),
         ("testGenerateWalletFromSeed", testGenerateWalletFromSeed),
         ("testGenerateWalletFromMnemonicNoDerivationPath", testGenerateWalletFromMnemonicNoDerivationPath),
+        ("testGenerateWalletFromMnemonicInvalidMnemonic", testGenerateWalletFromMnemonicInvalidMnemonic),
         ("testSecp256k1DerivationPath", testSecp256k1DerivationPath),
         ("testED25519DerivationPath", testED25519DerivationPath),
         ("testGetTxxs", testGetTxxs),
@@ -25,6 +26,9 @@ final class XRPKitTests: XCTestCase {
         ("testDisableMaster", testDisableMaster),
         ("testGetSignerList", testGetSignerList),
         ("testMultiSignEnableMaster", testMultiSignEnableMaster),
+        ("testSignerListSet", testSignerListSet),
+        ("testAccountID", testAccountID),
+        ("testXAddress", testXAddress),
     ]
     
     func testMultiSignEnableMaster() {
@@ -532,6 +536,9 @@ final class XRPKitTests: XCTestCase {
         }
         XCTAssert(XRPAddress.encodeXAddress(rAddress: rootAccount, tag: 4294967295, test: false) == "XVLhHMPHU98es4dbozjVtdWzVrDjtV18pX8yuPT7y4xaEHi")
         XCTAssert(XRPAddress.encodeXAddress(rAddress: rootAccount, tag: 4294967294, test: false) == "XVLhHMPHU98es4dbozjVtdWzVrDjtV1kAsixQTdMjbWi39u")
+        XCTAssert(XRPAddress.encodeXAddress(rAddress: "rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY", tag: 12345, test: false) == "XV5sbjUmgPpvXv4ixFWZ5ptAYZ6PD28Sq49uo34VyjnmK5H")
+        let address = try! XRPAddress.decodeXAddress(xAddress: "XV5sbjUmgPpvXv4ixFWZ5ptAYZ6PD28Sq49uo34VyjnmK5H")
+        XCTAssert(address.rAddress == "rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY" && address.tag == 12345)
         
     }
     

@@ -148,8 +148,9 @@ import XRPKit
 
 let wallet = try! XRPWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
 let amount = try! XRPAmount(drops: 100000000)
+let address = try! XRPAddress(rAddress: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK")
 
-_ = XRPPayment(from: wallet, to: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK", amount: amount).send().map { (result) in
+_ = XRPPayment(from: wallet, to: address, amount: amount).send().map { (result) in
     print(result)
 }
 
