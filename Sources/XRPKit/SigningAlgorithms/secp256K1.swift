@@ -75,7 +75,7 @@ class SECP256K1: SigningAlgorithm {
         }
     }
     
-    private static func derivePublicKey(ctx: OpaquePointer, secretKey: UnsafePointer<UInt8>) throws -> ECDSAPublicKey {
+    internal static func derivePublicKey(ctx: OpaquePointer, secretKey: UnsafePointer<UInt8>) throws -> ECDSAPublicKey {
         var _publicKey = secp256k1_pubkey()
         if secp256k1_ec_pubkey_create(ctx, UnsafeMutablePointer<secp256k1_pubkey>(&_publicKey), secretKey) == 0 {
             secp256k1_context_destroy(ctx)

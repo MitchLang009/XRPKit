@@ -88,7 +88,7 @@ public class XRPWallet {
     /// - Parameter mnemonic: mnemonic phrase .
     /// - Throws: SeedError
     public convenience init(mnemonic: String) throws {
-        let seed = Mnemonic.createSeed(mnemonic: mnemonic)
+        let seed = Bip39Mnemonic.createSeed(mnemonic: mnemonic)
         let bytes = [UInt8](seed)
         let entropy = Entropy(bytes: bytes)
         let keyPair = try! SECP256K1.deriveKeyPair(seed: entropy.bytes)
@@ -207,7 +207,7 @@ public class XRPWallet {
     }
 
     public static func generateRandomMnemonicWallet() throws -> XRPWallet {
-        let mnemonic = try Mnemonic.create()
+        let mnemonic = try Bip39Mnemonic.create()
         return try! XRPWallet(mnemonic: mnemonic)
     }
 }

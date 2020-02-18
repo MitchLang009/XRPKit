@@ -29,7 +29,38 @@ final class XRPKitTests: XCTestCase {
         ("testSignerListSet", testSignerListSet),
         ("testAccountID", testAccountID),
         ("testXAddress", testXAddress),
+        ("testBip44", testBip44),
     ]
+    
+    func testBip44() {
+        let mnemonic = "jar deer fox object wrap flush address birth immune plug spell solve reunion head mobile"
+        let seed = Bip39Mnemonic.createSeed(mnemonic: mnemonic)
+        let privateKey = PrivateKey(seed: seed, coin: .bitcoin)
+
+        // BIP44 key derivation
+        // m/44'
+        let purpose = privateKey.derived(at: .hardened(44))
+
+        // m/44'/0'
+        let coinType = purpose.derived(at: .hardened(144))
+
+        // m/44'/0'/0'
+        let account = coinType.derived(at: .hardened(0))
+
+        // m/44'/0'/0'/0
+        let change = account.derived(at: .notHardened(0))
+
+        // m/44'/0'/0'/0/0
+        let firstPrivateKey = change.derived(at: .notHardened(0))
+        print(firstPrivateKey.get())
+        var finalMasterPrivateKey = Data(repeating: 0x00, count: 33)
+        finalMasterPrivateKey.replaceSubrange(1...firstPrivateKey.raw.count, with: firstPrivateKey.raw)
+        print(firstPrivateKey.publicKey.hexadecimal)
+        let address = XRPWallet.deriveAddress(publicKey: firstPrivateKey.publicKey.hexadecimal)
+        print(address)
+        XCTAssert(address == "rQ9f9FZkbeAVkJ9AYRfMYEaSboGwxHWuDd")
+        
+    }
     
     func testMultiSignEnableMaster() {
         let exp = expectation(description: "Loading stories")
