@@ -110,16 +110,16 @@ import Foundation
 //    Digit of the number. The least significant digit is stored at index 0, the most significant
 //    digit is stored at the last index.
 
-public typealias Limbs  = [UInt64]
-public typealias Limb = UInt64
+internal typealias Limbs  = [UInt64]
+internal typealias Limb = UInt64
 
 //    A digit is a number in base 10^18. This is the biggest possible base that
 //    fits into an unsigned 64 bit number while maintaining the propery that the square root of
 //    the base is a whole number and a power of ten . Digits are required for printing BInt
 //    numbers. Limbs are converted into Digits first, and then printed.
 
-public typealias Digits = [UInt64]
-public typealias Digit = UInt64
+internal typealias Digits = [UInt64]
+internal typealias Digit = UInt64
 
 // MARK: - Imports
 //    ————————————————————————————————————————————————————————————————————————————————————————————
@@ -161,7 +161,7 @@ infix operator ** : ExponentiationPrecedence
 ///        (12 * 2^(2*64)) +
 ///        ... +
 ///        (ln * 2^(n*64))
-public struct BInt: SignedNumeric, // Implies Numeric, Equatable, ExpressibleByIntegerLiteral
+internal struct BInt: SignedNumeric, // Implies Numeric, Equatable, ExpressibleByIntegerLiteral
     BinaryInteger, // Implies Hashable, CustomStringConvertible, Strideable, Comparable
 ExpressibleByFloatLiteral {
     //
@@ -178,23 +178,23 @@ ExpressibleByFloatLiteral {
     internal var limbs = Limbs()
     
     // Required by protocol Numeric
-    public typealias Magnitude = UInt64
+    internal typealias Magnitude = UInt64
     
     // Required by protocol Numeric
-    public var magnitude: UInt64 {
+    internal var magnitude: UInt64 {
         return self.limbs[0]
     }
     
-    public typealias Words = [UInt]
+    internal typealias Words = [UInt]
     
     /// A collection containing the words of this value’s binary representation, in order from
     ///    the least significant to most significant.
-    public var words: BInt.Words {
+    internal var words: BInt.Words {
         return self.limbs.map { UInt($0) }
     }
     
     /// Returns the size of the BInt in bits.
-    public var size: Int {
+    internal var size: Int {
         return 1 + (self.limbs.count * MemoryLayout<Limb>.size * 8)
     }
     
@@ -227,7 +227,7 @@ ExpressibleByFloatLiteral {
     }
     
     /// Create an instance initialized to an integer value.
-    public init(_ z: Int) {
+    internal init(_ z: Int) {
         //    Since abs(Int.min) > Int.max, it is necessary to handle
         //    z == Int.min as a special case.
         if z == Int.min {
@@ -239,12 +239,12 @@ ExpressibleByFloatLiteral {
     }
     
     /// Create an instance initialized to an unsigned integer value.
-    public init(_ n: UInt) {
+    internal init(_ n: UInt) {
         self.init(limbs: [Limb(n)])
     }
     
     /// Create an instance initialized to a string value.
-    public init?(_ str: String) {
+    internal init?(_ str: String) {
         var str = str
         var sign = false
         var base: Limbs = [1]
@@ -271,7 +271,7 @@ ExpressibleByFloatLiteral {
     
     /// Create an instance initialized to a string with the value of mathematical numerical system of the specified radix (base).
     /// So for example, to get the value of hexadecimal string radix value must be set to 16.
-    public init?(_ nStr: String, radix: Int) {
+    internal init?(_ nStr: String, radix: Int) {
         if radix == 10 {
             // regular string init is faster
             // see metrics
@@ -319,44 +319,44 @@ ExpressibleByFloatLiteral {
     }
     
     //    Requierd by protocol ExpressibleByFloatLiteral.
-    public init(floatLiteral value: Double) {
+    internal init(floatLiteral value: Double) {
         self.init(sign: value < 0.0, limbs: [Limb(value)])
     }
     
     //    Required by protocol ExpressibleByIntegerLiteral.
-    public init(integerLiteral value: Int) {
+    internal init(integerLiteral value: Int) {
         self.init(value)
     }
     
     // Required by protocol Numeric
-    public init?<T>(exactly source: T) where T: BinaryInteger {
+    internal init?<T>(exactly source: T) where T: BinaryInteger {
         self.init(Int(source))
     }
     
     ///    Creates an integer from the given floating-point value, rounding toward zero.
-    public init<T>(_ source: T) where T: BinaryFloatingPoint {
+    internal init<T>(_ source: T) where T: BinaryFloatingPoint {
         self.init(Int(source))
     }
     
     ///    Creates a new instance from the given integer.
-    public init<T>(_ source: T) where T: BinaryInteger {
+    internal init<T>(_ source: T) where T: BinaryInteger {
         self.init(Int(source))
     }
     
     ///    Creates a new instance with the representable value that’s closest to the given integer.
-    public init<T>(clamping source: T) where T: BinaryInteger {
+    internal init<T>(clamping source: T) where T: BinaryInteger {
         self.init(Int(source))
     }
     
     ///    Creates an integer from the given floating-point value, if it can be represented
     ///    exactly.
-    public init?<T>(exactly source: T) where T: BinaryFloatingPoint {
+    internal init?<T>(exactly source: T) where T: BinaryFloatingPoint {
         self.init(source)
     }
     
     ///    Creates a new instance from the bit pattern of the given instance by sign-extending or
     ///    truncating to fit this type.
-    public init<T>(truncatingIfNeeded source: T) where T: BinaryInteger {
+    internal init<T>(truncatingIfNeeded source: T) where T: BinaryInteger {
         self.init(source)
     }
     
@@ -370,15 +370,15 @@ ExpressibleByFloatLiteral {
     //
     //
     
-    public var description: String {
+    internal var description: String {
         return (self.sign ? "-" : "").appending(self.limbs.decimalRepresentation)
     }
     
-    public init?(number: String, withBase base: Int) {
+    internal init?(number: String, withBase base: Int) {
         self.init(number.convertingBase(from: base, toBase: 10))
     }
     
-    public func asString(withBase base: Int) -> String {
+    internal func asString(withBase base: Int) -> String {
         let str = self.limbs.decimalRepresentation
         let newStr = str.convertingBase(from: 10, toBase: base)
         
@@ -423,12 +423,12 @@ ExpressibleByFloatLiteral {
     }
     
     ///    A Boolean value indicating whether this type is a signed integer type.
-    public static var isSigned: Bool {
+    internal static var isSigned: Bool {
         return true
     }
     
     ///    Returns -1 if this value is negative and 1 if it’s positive; otherwise, 0.
-    public func signum() -> BInt {
+    internal func signum() -> BInt {
         if self.isZero() { return BInt(0) } else if self.isPositive() { return BInt(1) } else { return BInt(-1) }
     }
     
@@ -440,12 +440,12 @@ ExpressibleByFloatLiteral {
     func isEven() -> Bool { return self.limbs[0] & 1 == 0 }
     
     ///    The number of bits in the current binary representation of this value.
-    public var bitWidth: Int {
+    internal var bitWidth: Int {
         return self.limbs.bitWidth
     }
     
     ///    The number of trailing zeros in this value’s binary representation.
-    public var trailingZeroBitCount: Int {
+    internal var trailingZeroBitCount: Int {
         var i = 0
         while true {
             if self.limbs.getBit(at: i) { return i }
@@ -454,7 +454,7 @@ ExpressibleByFloatLiteral {
     }
     
     /// Serialization
-    public func serialize() -> Data {
+    internal func serialize() -> Data {
         let byteCount = (bitWidth + 7) / 8
         guard byteCount > 0 else { return Data()}
         
@@ -487,7 +487,7 @@ ExpressibleByFloatLiteral {
     //
     //
     
-    public static func <<<T: BinaryInteger>(lhs: BInt, rhs: T) -> BInt {
+    internal static func <<<T: BinaryInteger>(lhs: BInt, rhs: T) -> BInt {
         if rhs < 0 { return lhs >> rhs }
         
         let limbs = lhs.limbs.shiftingUp(Int(rhs))
@@ -496,16 +496,16 @@ ExpressibleByFloatLiteral {
         return BInt(sign: sign, limbs: limbs)
     }
     
-    public static func <<=<T: BinaryInteger>(lhs: inout BInt, rhs: T) {
+    internal static func <<=<T: BinaryInteger>(lhs: inout BInt, rhs: T) {
         lhs.limbs.shiftUp(Int(rhs))
     }
     
-    public static func >><T: BinaryInteger>(lhs: BInt, rhs: T) -> BInt {
+    internal static func >><T: BinaryInteger>(lhs: BInt, rhs: T) -> BInt {
         if rhs < 0 { return lhs << rhs }
         return BInt(sign: lhs.sign, limbs: lhs.limbs.shiftingDown(Int(rhs)))
     }
     
-    public static func >>=<T: BinaryInteger>(lhs: inout BInt, rhs: T) {
+    internal static func >>=<T: BinaryInteger>(lhs: inout BInt, rhs: T) {
         lhs.limbs.shiftDown(Int(rhs))
     }
     
@@ -520,7 +520,7 @@ ExpressibleByFloatLiteral {
     //
     
     ///    Returns the result of performing a bitwise AND operation on the two given values.
-    public static func &(lhs: BInt, rhs: BInt) -> BInt {
+    internal static func &(lhs: BInt, rhs: BInt) -> BInt {
         var res: Limbs = [0]
         
         for i in 0..<(64 * Swift.max(lhs.limbs.count, rhs.limbs.count)) {
@@ -536,7 +536,7 @@ ExpressibleByFloatLiteral {
     
     ///    Stores the result of performing a bitwise AND operation on the two given values in the
     ///    left-hand-side variable.
-    public static func &=(lhs: inout BInt, rhs: BInt) {
+    internal static func &=(lhs: inout BInt, rhs: BInt) {
         let res = lhs & rhs
         lhs = res
     }
@@ -554,7 +554,7 @@ ExpressibleByFloatLiteral {
     //
     //
     
-    public static func |(lhs: BInt, rhs: BInt) -> BInt {
+    internal static func |(lhs: BInt, rhs: BInt) -> BInt {
         var res: Limbs = [0]
         
         for i in 0..<(64 * Swift.max(lhs.limbs.count, rhs.limbs.count)) {
@@ -568,7 +568,7 @@ ExpressibleByFloatLiteral {
     //    static func |(lhs: Int, rhs: BInt) -> BInt
     //    static func |(lhs: BInt, rhs: Int) -> BInt
     //
-    public static func |=(lhs: inout BInt, rhs: BInt) {
+    internal static func |=(lhs: inout BInt, rhs: BInt) {
         let res = lhs | rhs
         lhs = res
     }
@@ -585,7 +585,7 @@ ExpressibleByFloatLiteral {
     //
     //
     
-    public static func ^(lhs: BInt, rhs: BInt) -> BInt {
+    internal static func ^(lhs: BInt, rhs: BInt) -> BInt {
         var res: Limbs = [0]
         
         for i in 0..<(64 * Swift.max(lhs.limbs.count, rhs.limbs.count)) {
@@ -596,7 +596,7 @@ ExpressibleByFloatLiteral {
         return BInt(sign: lhs.sign != rhs.sign, limbs: res)
     }
     
-    public static func ^=(lhs: inout BInt, rhs: BInt) {
+    internal static func ^=(lhs: inout BInt, rhs: BInt) {
         let res = lhs | rhs
         lhs = res
     }
@@ -611,7 +611,7 @@ ExpressibleByFloatLiteral {
     //
     //
     
-    public prefix static func ~(x: BInt) -> BInt {
+    internal prefix static func ~(x: BInt) -> BInt {
         var res = x.limbs
         for i in 0..<(res.bitWidth) {
             res.setBit(at: i, to: !res.getBit(at: i))
@@ -632,12 +632,12 @@ ExpressibleByFloatLiteral {
     //
     //
     
-    public prefix static func +(x: BInt) -> BInt {
+    internal prefix static func +(x: BInt) -> BInt {
         return x
     }
     
     // Required by protocol Numeric
-    public static func +=(lhs: inout BInt, rhs: BInt) {
+    internal static func +=(lhs: inout BInt, rhs: BInt) {
         if lhs.sign == rhs.sign {
             lhs.limbs.addLimbs(rhs.limbs)
             return
@@ -651,7 +651,7 @@ ExpressibleByFloatLiteral {
     }
     
     // Required by protocol Numeric
-    public static func +(lhs: BInt, rhs: BInt) -> BInt {
+    internal static func +(lhs: BInt, rhs: BInt) -> BInt {
         var lhs = lhs
         lhs += rhs
         return lhs
@@ -674,12 +674,12 @@ ExpressibleByFloatLiteral {
     //
     
     // Required by protocol SignedNumeric
-    public mutating func negate() {
+    internal mutating func negate() {
         if self.isNotZero() { self.sign = !self.sign }
     }
     
     // Required by protocol SignedNumeric
-    public static prefix func -(n: BInt) -> BInt {
+    internal static prefix func -(n: BInt) -> BInt {
         var n = n
         n.negate()
         return n
@@ -696,7 +696,7 @@ ExpressibleByFloatLiteral {
     //
     
     // Required by protocol Numeric
-    public static func -(lhs: BInt, rhs: BInt) -> BInt {
+    internal static func -(lhs: BInt, rhs: BInt) -> BInt {
         return lhs + -rhs
     }
     
@@ -704,7 +704,7 @@ ExpressibleByFloatLiteral {
     static func -(lhs: BInt, rhs: Int) -> BInt { return lhs - BInt(rhs) }
     
     // Required by protocol Numeric
-    public static func -=(lhs: inout BInt, rhs: BInt) { lhs += -rhs                        }
+    internal static func -=(lhs: inout BInt, rhs: BInt) { lhs += -rhs                        }
     static func -=(lhs: inout  Int, rhs: BInt) { lhs = (BInt(lhs) - rhs).toInt()! }
     static func -=(lhs: inout BInt, rhs: Int) { lhs -= BInt(rhs)                  }
     
@@ -719,7 +719,7 @@ ExpressibleByFloatLiteral {
     //
     
     // Required by protocol Numeric
-    public static func *(lhs: BInt, rhs: BInt) -> BInt {
+    internal static func *(lhs: BInt, rhs: BInt) -> BInt {
         let sign = !(lhs.sign == rhs.sign || lhs.isZero() || rhs.isZero())
         return BInt(sign: sign, limbs: lhs.limbs.multiplyingBy(rhs.limbs))
     }
@@ -728,7 +728,7 @@ ExpressibleByFloatLiteral {
     static func *(lhs: BInt, rhs: Int) -> BInt { return lhs * BInt(rhs) }
     
     // Required by protocol SignedNumeric
-    public static func *=(lhs: inout BInt, rhs: BInt) { lhs = lhs * rhs                  }
+    internal static func *=(lhs: inout BInt, rhs: BInt) { lhs = lhs * rhs                  }
     static func *=(lhs: inout  Int, rhs: BInt) { lhs = (BInt(lhs) * rhs).toInt()! }
     static func *=(lhs: inout BInt, rhs: Int) { lhs = lhs * BInt(rhs)            }
     
@@ -764,12 +764,12 @@ ExpressibleByFloatLiteral {
     //
     
     ///    Returns the quotient and remainder of this value divided by the given value.
-    public func quotientAndRemainder(dividingBy rhs: BInt) -> (quotient: BInt, remainder: BInt) {
+    internal func quotientAndRemainder(dividingBy rhs: BInt) -> (quotient: BInt, remainder: BInt) {
         let limbRes = self.limbs.divMod(rhs.limbs)
         return (BInt(limbs: limbRes.quotient), BInt(limbs: limbRes.remainder))
     }
     
-    public static func /(lhs: BInt, rhs: BInt) -> BInt {
+    internal static func /(lhs: BInt, rhs: BInt) -> BInt {
         let limbs = lhs.limbs.divMod(rhs.limbs).quotient
         let sign = (lhs.sign != rhs.sign) && !limbs.equalTo(0)
         
@@ -779,7 +779,7 @@ ExpressibleByFloatLiteral {
     static func /(lhs: Int, rhs: BInt) -> BInt { return BInt(lhs) / rhs }
     static func /(lhs: BInt, rhs: Int) -> BInt { return lhs / BInt(rhs) }
     
-    public static func /=(lhs: inout BInt, rhs: BInt) { lhs = lhs / rhs       }
+    internal static func /=(lhs: inout BInt, rhs: BInt) { lhs = lhs / rhs       }
     static func /=(lhs: inout BInt, rhs: Int) { lhs = lhs / BInt(rhs) }
     
     //
@@ -792,7 +792,7 @@ ExpressibleByFloatLiteral {
     //
     //
     
-    public static func %(lhs: BInt, rhs: BInt) -> BInt {
+    internal static func %(lhs: BInt, rhs: BInt) -> BInt {
         let limbs = lhs.limbs.divMod(rhs.limbs).remainder
         let sign = lhs.sign && !limbs.equalTo(0)
         
@@ -802,7 +802,7 @@ ExpressibleByFloatLiteral {
     static func %(lhs: Int, rhs: BInt) -> BInt { return BInt(lhs) % rhs  }
     static func %(lhs: BInt, rhs: Int) -> BInt { return lhs % BInt(rhs) }
     
-    public static func %=(lhs: inout BInt, rhs: BInt) { lhs = lhs % rhs       }
+    internal static func %=(lhs: inout BInt, rhs: BInt) { lhs = lhs % rhs       }
     static func %=(lhs: inout BInt, rhs: Int) { lhs = lhs % BInt(rhs) }
     
     //
@@ -816,7 +816,7 @@ ExpressibleByFloatLiteral {
     //
     
     // Required by protocol Equatable
-    public static func ==(lhs: BInt, rhs: BInt) -> Bool {
+    internal static func ==(lhs: BInt, rhs: BInt) -> Bool {
         if lhs.sign != rhs.sign { return false }
         return lhs.limbs == rhs.limbs
     }
@@ -841,7 +841,7 @@ ExpressibleByFloatLiteral {
     static func !=<T: BinaryInteger>(lhs: T, rhs: BInt) -> Bool { return rhs != lhs }
     
     // Required by protocol Comparable
-    public static func <(lhs: BInt, rhs: BInt) -> Bool {
+    internal static func <(lhs: BInt, rhs: BInt) -> Bool {
         if lhs.sign != rhs.sign { return lhs.sign }
         
         if lhs.sign { return rhs.limbs.lessThan(lhs.limbs) }
@@ -865,17 +865,17 @@ ExpressibleByFloatLiteral {
     static func <(lhs: BInt, rhs: Int) -> Bool { return lhs < BInt(rhs) }
     
     // Required by protocol Comparable
-    public static func >(lhs: BInt, rhs: BInt) -> Bool { return rhs < lhs       }
+    internal static func >(lhs: BInt, rhs: BInt) -> Bool { return rhs < lhs       }
     static func >(lhs: Int, rhs: BInt) -> Bool { return BInt(lhs) > rhs }
     static func >(lhs: BInt, rhs: Int) -> Bool { return lhs > BInt(rhs) }
     
     // Required by protocol Comparable
-    public static func <=(lhs: BInt, rhs: BInt) -> Bool { return !(rhs < lhs)       }
+    internal static func <=(lhs: BInt, rhs: BInt) -> Bool { return !(rhs < lhs)       }
     static func <=(lhs: Int, rhs: BInt) -> Bool { return !(rhs < BInt(lhs)) }
     static func <=(lhs: BInt, rhs: Int) -> Bool { return !(BInt(rhs) < lhs) }
     
     // Required by protocol Comparable
-    public static func >=(lhs: BInt, rhs: BInt) -> Bool { return !(lhs < rhs)       }
+    internal static func >=(lhs: BInt, rhs: BInt) -> Bool { return !(lhs < rhs)       }
     static func >=(lhs: Int, rhs: BInt) -> Bool { return !(BInt(lhs) < rhs) }
     static func >=(lhs: BInt, rhs: Int) -> Bool { return !(lhs < BInt(rhs)) }
 }

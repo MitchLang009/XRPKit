@@ -35,7 +35,7 @@ public class XRPRawTransaction {
         let data: [UInt8] = HASH_TX_SIGN + blob
         
         // sign the prefixed blob
-        let algorithm = XRPWallet.getSeedTypeFrom(publicKey: wallet.publicKey).algorithm
+        let algorithm = XRPSeedWallet.getSeedTypeFrom(publicKey: wallet.publicKey).algorithm
         let signature = try algorithm.sign(message: data, privateKey: [UInt8](Data(hex: wallet.privateKey)))
         
         // verify signature
@@ -63,7 +63,7 @@ public class XRPRawTransaction {
         let data: [UInt8] = HASH_TX_MULTISIGN + blob + wallet.accountID
         
         // sign the prefixed blob
-        let algorithm = XRPWallet.getSeedTypeFrom(publicKey: wallet.publicKey).algorithm
+        let algorithm = XRPSeedWallet.getSeedTypeFrom(publicKey: wallet.publicKey).algorithm
         let signature = try algorithm.sign(message: data, privateKey: [UInt8](Data(hex: wallet.privateKey)))
         
         // verify signature

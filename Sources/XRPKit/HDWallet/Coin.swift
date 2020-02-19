@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum Coin {
+internal enum Coin {
     case bitcoin
     case ethereum
     case litecoin
@@ -16,7 +16,7 @@ public enum Coin {
     case dash
     
     //https://github.com/satoshilabs/slips/blob/master/slip-0132.md
-    public var privateKeyVersion: UInt32 {
+    internal var privateKeyVersion: UInt32 {
         switch self {
         case .litecoin:
             return 0x019D9CFE
@@ -30,7 +30,7 @@ public enum Coin {
         }
     }
     // P2PKH
-    public var publicKeyHash: UInt8 {
+    internal var publicKeyHash: UInt8 {
         switch self {
         case .litecoin:
             return 0x30
@@ -45,7 +45,7 @@ public enum Coin {
     }
     
     // P2SH
-    public var scriptHash: UInt8 {
+    internal var scriptHash: UInt8 {
         switch self {
         case .bitcoinCash: fallthrough
         case .litecoin: fallthrough
@@ -59,7 +59,7 @@ public enum Coin {
     }
     
     //https://www.reddit.com/r/litecoin/comments/6vc8tc/how_do_i_convert_a_raw_private_key_to_wif_for/
-    public var wifAddressPrefix: UInt8 {
+    internal var wifAddressPrefix: UInt8 {
         switch self {
         case .bitcoinCash: fallthrough
         case .bitcoin:
@@ -73,7 +73,7 @@ public enum Coin {
         }
     }
     
-    public var addressPrefix:String {
+    internal var addressPrefix:String {
         switch self {
         case .ethereum:
             return "0x"
@@ -82,12 +82,12 @@ public enum Coin {
         }
     }
     
-    public var uncompressedPkSuffix: UInt8 {
+    internal var uncompressedPkSuffix: UInt8 {
         return 0x01
     }
     
     
-    public var coinType: UInt32 {
+    internal var coinType: UInt32 {
         switch self {
         case .bitcoin:
             return 0
@@ -102,7 +102,7 @@ public enum Coin {
         }
     }
     
-    public var scheme: String {
+    internal var scheme: String {
         switch self {
         case .bitcoin:
             return "bitcoin"

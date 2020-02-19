@@ -19,14 +19,14 @@ enum PrivateKeyType {
     case nonHd
 }
 
-public struct PrivateKey {
-    public let raw: Data
-    public let chainCode: Data
-    public let index: UInt32
-    public let coin: Coin
+internal struct PrivateKey {
+    internal let raw: Data
+    internal let chainCode: Data
+    internal let index: UInt32
+    internal let coin: Coin
     private var keyType: PrivateKeyType
     
-    public init(seed: Data, coin: Coin) {
+    internal init(seed: Data, coin: Coin) {
         let output = try! Data(CryptoSwift.HMAC(key: "Bitcoin seed".data(using: .ascii)!.bytes, variant: .sha512).authenticate(seed.bytes))
         self.raw = output[0..<32]
         self.chainCode = output[32..<64]
@@ -43,7 +43,7 @@ public struct PrivateKey {
         self.keyType = .hd
     }
     
-    public var publicKey: Data {
+    internal var publicKey: Data {
         var _data = raw
         let ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))!
         let data = try! Data(SECP256K1.derivePublicKey(ctx: ctx, secretKey: _data.getPointer()).compressed)
@@ -51,7 +51,7 @@ public struct PrivateKey {
         return data
     }
 
-    public func wifCompressed() -> String {
+    internal func wifCompressed() -> String {
         var data = Data()
         data += Data([coin.wifAddressPrefix])
         data += raw
@@ -60,7 +60,7 @@ public struct PrivateKey {
         return String(base58Encoding: data, alphabet: Base58String.btcAlphabet)
     }
     
-    public func get() -> String {
+    internal func get() -> String {
         switch self.coin {
         case .bitcoin: fallthrough
         case .litecoin: fallthrough
@@ -72,7 +72,7 @@ public struct PrivateKey {
         }
     }
     
-    public func derived(at node:DerivationNode) -> PrivateKey {
+    internal func derived(at node:DerivationNode) -> PrivateKey {
         guard keyType == .hd else { fatalError() }
         let edge: UInt32 = 0x80000000
         guard (edge & node.index) == 0 else { fatalError("Invalid child index") }

@@ -8,40 +8,40 @@
 
 import Foundation
 
-public struct BigNumber {
-    public var int32: Int32
-    public var data: Data
+internal struct BigNumber {
+    internal var int32: Int32
+    internal var data: Data
     
-    public static let zero: BigNumber = BigNumber()
-    public static let one: BigNumber = BigNumber(1)
-    public static let negativeOne: BigNumber = BigNumber(1)
+    internal static let zero: BigNumber = BigNumber()
+    internal static let one: BigNumber = BigNumber(1)
+    internal static let negativeOne: BigNumber = BigNumber(1)
     
-    public init() {
+    internal init() {
         self.init(0)
     }
     
-    public init(_ int32: Int32) {
+    internal init(_ int32: Int32) {
         self.int32 = int32
         self.data = int32.toBigNum()
     }
     
-    public init(int32: Int32) {
+    internal init(int32: Int32) {
         self.int32 = int32
         self.data = int32.toBigNum()
     }
     
-    public init(_ data: Data) {
+    internal init(_ data: Data) {
         self.data = data
         self.int32 = data.toInt32()
     }
 }
 
 extension BigNumber: Comparable {
-    public static func == (lhs: BigNumber, rhs: BigNumber) -> Bool {
+    internal static func == (lhs: BigNumber, rhs: BigNumber) -> Bool {
         return lhs.int32 == rhs.int32
     }
     
-    public static func < (lhs: BigNumber, rhs: BigNumber) -> Bool {
+    internal static func < (lhs: BigNumber, rhs: BigNumber) -> Bool {
         return lhs.int32 < rhs.int32
     }
 }

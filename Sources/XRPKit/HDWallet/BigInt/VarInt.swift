@@ -8,13 +8,13 @@
 
 import Foundation
 
-public struct VarInt: ExpressibleByIntegerLiteral {
-    public typealias IntegerLiteralType = UInt64
-    public let underlyingValue: UInt64
+internal struct VarInt: ExpressibleByIntegerLiteral {
+    internal typealias IntegerLiteralType = UInt64
+    internal let underlyingValue: UInt64
     let length: UInt8
     let data: Data
     
-    public init(integerLiteral value: UInt64) {
+    internal init(integerLiteral value: UInt64) {
         self.init(value)
     }
     
@@ -29,7 +29,7 @@ public struct VarInt: ExpressibleByIntegerLiteral {
      65536 ~ 4294967295 : 5-byte(0xfe010000 ~ 0xfeffffffff)
      4294967296 ~ 1.84467441e19 : 9-byte(0xff0000000100000000 ~ 0xfeffffffffffffffff)
      */
-    public init(_ value: UInt64) {
+    internal init(_ value: UInt64) {
         underlyingValue = value
         
         switch value {
@@ -50,21 +50,21 @@ public struct VarInt: ExpressibleByIntegerLiteral {
         }
     }
     
-    public init(_ value: Int) {
+    internal init(_ value: Int) {
         self.init(UInt64(value))
     }
     
-    public func serialized() -> Data {
+    internal func serialized() -> Data {
         return data
     }
     
-    public static func deserialize(_ data: Data) -> VarInt {
+    internal static func deserialize(_ data: Data) -> VarInt {
         return data.to(type: self)
     }
 }
 
 extension VarInt: CustomStringConvertible {
-    public var description: String {
+    internal var description: String {
         return "\(underlyingValue)"
     }
 }

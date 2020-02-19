@@ -77,9 +77,9 @@ contributions must compile on Linux.
 import XRPKit
 
 // create a completely new, randomly generated wallet
-let wallet = XRPWallet() // defaults to secp256k1
-let wallet2 = XRPWallet(type: .secp256k1)
-let wallet3 = XRPWallet(type: .ed25519)
+let wallet = XRPSeedWallet() // defaults to secp256k1
+let wallet2 = XRPSeedWallet(type: .secp256k1)
+let wallet3 = XRPSeedWallet(type: .ed25519)
 
 ```
 
@@ -90,18 +90,18 @@ let wallet3 = XRPWallet(type: .ed25519)
 import XRPKit
 
 // generate a wallet from an existing seed
-let wallet = try! XRPWallet(seed: "snsTnz4Wj8vFnWirNbp7tnhZyCqx9")
+let wallet = try! XRPSeedWallet(seed: "snsTnz4Wj8vFnWirNbp7tnhZyCqx9")
 
 ```
 
-### Derive wallet from a mnemonic
+### Derive wallet from a mnemonic (BIP32/39/44)
 
 ```swift
 
 import XRPKit
 
 let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-let walletFromMnemonic = try! XRPWallet(mnemonic: mnemonic)
+let walletFromMnemonic = try! XRPMnemonicWallet(mnemonic: mnemonic)
 
 ```
 
@@ -110,7 +110,7 @@ let walletFromMnemonic = try! XRPWallet(mnemonic: mnemonic)
 
 import XRPKit
 
-let wallet = XRPWallet()
+let wallet = XRPSeedWallet()
 
 print(wallet.address) // rJk1prBA4hzuK21VDK2vK2ep2PKGuFGnUD
 print(wallet.seed) // snsTnz4Wj8vFnWirNbp7tnhZyCqx9
@@ -128,14 +128,14 @@ import XRPKit
 let btc = "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2"
 let xrp = "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK"
 
-XRPWallet.validate(address: btc) // returns false
-XRPWallet.validate(address: xrp) // returns true
+XRPSeedWallet.validate(address: btc) // returns false
+XRPSeedWallet.validate(address: xrp) // returns true
 
 // Seed
 let seed = "shrKftFK3ZkMPkq4xe5wGB8HaNSLf"
 
-XRPWallet.validate(seed: xrp) // returns false
-XRPWallet.validate(seed: seed) // returns true
+XRPSeedWallet.validate(seed: xrp) // returns false
+XRPSeedWallet.validate(seed: seed) // returns true
 
 ```
 
@@ -146,7 +146,7 @@ XRPWallet.validate(seed: seed) // returns true
 
 import XRPKit
 
-let wallet = try! XRPWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
+let wallet = try! XRPSeedWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
 let amount = try! XRPAmount(drops: 100000000)
 let address = try! XRPAddress(rAddress: "rPdCDje24q4EckPNMQ2fmUAMDoGCCu3eGK")
 
@@ -161,7 +161,7 @@ _ = XRPPayment(from: wallet, to: address, amount: amount).send().map { (result) 
 
 import XRPKit
 
-let wallet = try! XRPWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
+let wallet = try! XRPSeedWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
 
 let fields: [String:Any] = [
     "TransactionType" : "Payment",
@@ -194,7 +194,7 @@ _ = signedTransaction.submit().map { (result) in
 
 import XRPKit
 
-let wallet = try! XRPWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
+let wallet = try! XRPSeedWallet(seed: "shrKftFK3ZkMPkq4xe5wGB8HaNSLf")
 
 // dictionary containing partial transaction fields
 let partialFields: [String:Any] = [
