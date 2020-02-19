@@ -21,7 +21,7 @@ public struct XRPAddress {
     }
     
     public init(rAddress: String, tag: UInt32? = nil, isTest: Bool = false) throws {
-        if !XRPWallet.validate(address: rAddress) {
+        if !XRPSeedWallet.validate(address: rAddress) {
             throw XRPAddressError.invalidAddress
         }
         self.rAddress = rAddress
@@ -66,7 +66,7 @@ public struct XRPAddress {
     }
     
     public static func encodeXAddress(rAddress: String, tag: UInt32? = nil, test: Bool = false ) -> String {
-        let accountID = XRPWallet.accountID(for: rAddress)
+        let accountID = XRPSeedWallet.accountID(for: rAddress)
         let prefix: [UInt8] = test ? [0x04, 0x93] : [0x05, 0x44]
         let flags: [UInt8] = tag == nil ? [0x00] : [0x01]
         let tag = tag == nil ? [UInt8](UInt64(0).data) : [UInt8](UInt64(tag!).data)

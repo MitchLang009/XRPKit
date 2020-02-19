@@ -30,79 +30,23 @@ public enum SeedType {
 
 }
 
-public class XRPWallet {
+public protocol XRPWallet {
+    var privateKey: String {get}
+    var publicKey: String {get}
+    var address: String {get}
+    var accountID: [UInt8] {get}
+    init()
+    static func deriveAddress(publicKey: String) -> String
+    static func accountID(for address: String) ->  [UInt8]
+    static func validate(address: String) -> Bool
+}
 
-    public var privateKey: String
-    public var publicKey: String
-    public var seed: String
-    public var address: String
-    public var mnemonic: String?
-    internal var accountID: [UInt8] {
+extension XRPWallet {
+    public var accountID: [UInt8] {
         let accountID = RIPEMD160.hash(message: Data(hex: self.publicKey).sha256())
         return [UInt8](accountID)
     }
     
-    private init(privateKey: String, publicKey: String, seed: String, address: String, mnemonic: String? = nil) {
-        self.privateKey = privateKey
-        self.publicKey = publicKey
-        self.seed = seed
-        self.address = address
-        self.mnemonic = mnemonic
-    }
-
-    private convenience init(entropy: Entropy, type: SeedType) {
-        switch type {
-        case .ed25519:
-            let keyPair = try! ED25519.deriveKeyPair(seed: entropy.bytes)
-            let publicKey = [0xED] + keyPair.publicKey.hexadecimal!
-            let seed = try! XRPWallet.encodeSeed(entropy: entropy, type: .ed25519)
-            let address = XRPWallet.deriveAddress(publicKey: publicKey.toHexString())
-            self.init(privateKey: keyPair.privateKey, publicKey: publicKey.toHexString(), seed: seed, address: address)
-        case .secp256k1:
-            let keyPair = try! SECP256K1.deriveKeyPair(seed: entropy.bytes)
-            let seed = try! XRPWallet.encodeSeed(entropy: entropy, type: .secp256k1)
-            let address = XRPWallet.deriveAddress(publicKey: keyPair.publicKey)
-            self.init(privateKey: keyPair.privateKey, publicKey: keyPair.publicKey, seed: seed, address: address)
-        }
-    }
-
-    /// Creates a random XRPWallet.
-    public convenience init(type: SeedType = .secp256k1) {
-        let entropy = Entropy()
-        self.init(entropy: entropy, type: type)
-    }
-
-    /// Generates an XRPWallet from an existing family seed.
-    ///
-    /// - Parameter seed: amily seed using XRP alphabet and standard format.
-    /// - Throws: SeedError
-    public convenience init(seed: String) throws {
-        let bytes = try XRPWallet.decodeSeed(seed: seed)!
-        let entropy = Entropy(bytes: bytes)
-        let type = seed.prefix(3) == "sEd" ? SeedType.ed25519 : SeedType.secp256k1
-        self.init(entropy: entropy, type: type)
-    }
-
-    /// Generates an XRPWallet from an mnemonic string.
-    ///
-    /// - Parameter mnemonic: mnemonic phrase .
-    /// - Throws: SeedError
-    public convenience init(mnemonic: String) throws {
-        let seed = Mnemonic.createSeed(mnemonic: mnemonic)
-        let bytes = [UInt8](seed)
-        let entropy = Entropy(bytes: bytes)
-        let keyPair = try! SECP256K1.deriveKeyPair(seed: entropy.bytes)
-        let _seed = try! XRPWallet.encodeSeed(entropy: entropy, type: .secp256k1)
-        let address = XRPWallet.deriveAddress(publicKey: keyPair.publicKey)
-        self.init(
-            privateKey: keyPair.privateKey,
-            publicKey: keyPair.publicKey,
-            seed: _seed,
-            address: address,
-            mnemonic: mnemonic
-        )
-    }
-
     /// Derive a standard XRP address from a public key.
     ///
     /// - Parameter publicKey: hexadecimal public key
@@ -117,13 +61,13 @@ public class XRPWallet {
         return address
     }
     
-    static func accountID(for address: String) ->  [UInt8] {
+    public static func accountID(for address: String) ->  [UInt8] {
         let data = Data(base58Decoding: address)!
         let withoutCheck = data.prefix(data.count-4)
         let withoutPrefix = withoutCheck.suffix(from: 1)
         return withoutPrefix.bytes
     }
-
+    
     /// Validates a String is a valid XRP address.
     ///
     /// - Parameter address: address encoded using XRP alphabet
@@ -149,21 +93,113 @@ public class XRPWallet {
         }
         return false
     }
+}
 
-    /// Validates a String is a valid XRP family seed.
+public class XRPMnemonicWallet: XRPWallet {
+    
+    public var privateKey: String
+    public var publicKey: String
+    public var address: String
+    public var mnemonic: String
+    
+    required public convenience init() {
+        let mnemonic = try! Bip39Mnemonic.create()
+        try! self.init(mnemonic: mnemonic)
+    }
+    
+    /// Generates an XRPWallet from an mnemonic string.
     ///
-    /// - Parameter seed: seed encoded using XRP alphabet
-    /// - Returns: true if valid
-    ///
-    public static func validate(seed: String) -> Bool {
-        do {
-            if let _ = try XRPWallet.decodeSeed(seed: seed) {
-                return true
-            }
-            return false
-        } catch {
-            return false
+    /// - Parameter mnemonic: mnemonic phrase .
+    /// - Throws: SeedError
+    public convenience init(mnemonic: String, account: UInt32 = 0, change: UInt32 = 0, addressIndex: UInt32 = 0) throws {
+        let seed = Bip39Mnemonic.createSeed(mnemonic: mnemonic)
+        let privateKey = PrivateKey(seed: seed, coin: .bitcoin)
+        
+        // BIP44 key derivation
+        // m/44'
+        let purpose = privateKey.derived(at: .hardened(44))
+        // m/44'/144'
+        let coinType = purpose.derived(at: .hardened(144))
+        // m/44'/144'/0'
+        let account = coinType.derived(at: .hardened(account))
+        // m/44'/144'/0'/0
+        let change = account.derived(at: .notHardened(change))
+        // m/44'/144'/0'/0/0
+        let firstPrivateKey = change.derived(at: .notHardened(addressIndex))
+        
+        var finalMasterPrivateKey = Data(repeating: 0x00, count: 33)
+        finalMasterPrivateKey.replaceSubrange(1...firstPrivateKey.raw.count, with: firstPrivateKey.raw)
+        let address = XRPSeedWallet.deriveAddress(publicKey: firstPrivateKey.publicKey.hexadecimal)
+        self.init(
+            privateKey: finalMasterPrivateKey.hexadecimal,
+            publicKey: firstPrivateKey.publicKey.hexadecimal,
+            mnemonic: mnemonic,
+            address: address
+        )
+    }
+    
+    private init(privateKey: String, publicKey: String, mnemonic: String, address: String) {
+        self.privateKey = privateKey.uppercased()
+        self.publicKey = publicKey.uppercased()
+        self.mnemonic = mnemonic
+        self.address = address
+    }
+    
+    public static func generateRandomMnemonicWallet() throws -> XRPWallet {
+        let mnemonic = try Bip39Mnemonic.create()
+        return try XRPMnemonicWallet(mnemonic: mnemonic)
+    }
+}
+
+public class XRPSeedWallet: XRPWallet {
+
+    public var privateKey: String
+    public var publicKey: String
+    public var seed: String
+    public var address: String
+    
+    public required convenience init() {
+        let entropy = Entropy()
+        self.init(entropy: entropy, type: .secp256k1)
+    }
+
+    public convenience init(type: SeedType = .secp256k1) {
+        let entropy = Entropy()
+        self.init(entropy: entropy, type: type)
+    }
+    
+    private init(privateKey: String, publicKey: String, seed: String, address: String) {
+        self.privateKey = privateKey
+        self.publicKey = publicKey
+        self.seed = seed
+        self.address = address
+    }
+
+    private convenience init(entropy: Entropy, type: SeedType) {
+        switch type {
+        case .ed25519:
+            let keyPair = try! ED25519.deriveKeyPair(seed: entropy.bytes)
+            let publicKey = [0xED] + keyPair.publicKey.hexadecimal!
+            let seed = try! XRPSeedWallet.encodeSeed(entropy: entropy, type: .ed25519)
+            let address = XRPSeedWallet.deriveAddress(publicKey: publicKey.toHexString())
+            self.init(privateKey: keyPair.privateKey, publicKey: publicKey.toHexString(), seed: seed, address: address)
+        case .secp256k1:
+            let keyPair = try! SECP256K1.deriveKeyPair(seed: entropy.bytes)
+            let seed = try! XRPSeedWallet.encodeSeed(entropy: entropy, type: .secp256k1)
+            let address = XRPSeedWallet.deriveAddress(publicKey: keyPair.publicKey)
+            self.init(privateKey: keyPair.privateKey, publicKey: keyPair.publicKey, seed: seed, address: address)
         }
+    }
+
+    /// Generates an XRPWallet from an existing family seed.
+    ///
+    /// - Parameter seed: amily seed using XRP alphabet and standard format.
+    /// - Throws: SeedError
+    public convenience init(seed: String) throws {
+        let bytes = try XRPSeedWallet.decodeSeed(seed: seed)!
+        let entropy = Entropy(bytes: bytes)
+        let type = seed.prefix(3) == "sEd" ? SeedType.ed25519 : SeedType.secp256k1
+        self.init(entropy: entropy, type: type)
     }
 
     private static func encodeSeed(entropy: Entropy, type: SeedType) throws -> String {
@@ -205,9 +241,21 @@ public class XRPWallet {
         // FIXME: Is this correct?
         return data.count == 33 && data[0] == 0xED ? .ed25519 : .secp256k1
     }
-
-    public static func generateRandomMnemonicWallet() throws -> XRPWallet {
-        let mnemonic = try Mnemonic.create()
-        return try! XRPWallet(mnemonic: mnemonic)
+    
+    /// Validates a String is a valid XRP family seed.
+    ///
+    /// - Parameter seed: seed encoded using XRP alphabet
+    /// - Returns: true if valid
+    ///
+    public static func validate(seed: String) -> Bool {
+        do {
+            if let _ = try XRPSeedWallet.decodeSeed(seed: seed) {
+                return true
+            }
+            return false
+        } catch {
+            return false
+        }
     }
+
 }
