@@ -34,6 +34,38 @@ public struct XRPLedger {
         self.url = endpoint
     }
     
+    public static func getTx(tx: String) -> EventLoopFuture<NSDictionary> {
+        
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
+        
+        let parameters: [String: Any] = [
+            "method" : "tx",
+            "params": [
+                [
+                    "transaction" : tx,
+                ]
+            ]
+        ]
+        
+        _ = HTTP.post(url: url, parameters: parameters).map { (result) in
+            let JSON = result as! NSDictionary
+            let info = JSON["result"] as! NSDictionary
+            let status = info["status"] as! String
+            if status != "error" {
+                promise.succeed(info)
+            } else {
+                let errorMessage = info["error_message"] as! String
+                let error = LedgerError.runtimeError(errorMessage)
+                promise.fail(error)
+            }
+        }.recover { (error) in
+            promise.fail(error)
+        }
+        
+        return promise.futureResult
+        
+    }
+    
     public static func getTxs(account: String) -> EventLoopFuture<[XRPHistoricalTransaction]> {
         
         let promise = eventGroup.next().makePromise(of: [XRPHistoricalTransaction].self)
@@ -211,7 +243,40 @@ public struct XRPLedger {
             let info = JSON["result"] as! NSDictionary
             let status = info["status"] as! String
             if status != "error" {
-                promise.succeed( info)
+                promise.succeed(info)
+            } else {
+                let errorMessage = info["error_message"] as! String
+                let error = LedgerError.runtimeError(errorMessage)
+                promise.fail(error)
+            }
+        }.recover { (error) in
+            promise.fail(error)
+        }
+
+        return promise.futureResult
+        
+    }
+    
+    public static func getAccountChannels(account: String, address: String) -> EventLoopFuture<NSDictionary> {
+        
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
+        
+        let parameters: [String: Any] = [
+            "method" : "account_channels",
+            "params": [
+                [
+                    "account" : account,
+                    "destination_account": address,
+                    "ledger_index": "validated",
+                ]
+            ]
+        ]
+        _ = HTTP.post(url: url, parameters: parameters).map { (result) in
+            let JSON = result as! NSDictionary
+            let info = JSON["result"] as! NSDictionary
+            let status = info["status"] as! String
+            if status != "error" {
+                promise.succeed(info)
             } else {
                 let errorMessage = info["error_message"] as! String
                 let error = LedgerError.runtimeError(errorMessage)
@@ -265,4 +330,66 @@ public struct XRPLedger {
         return promise.futureResult
     }
     
+    public static func authorizeChannelClaim(channel: String, secret: String, amount: Int) -> EventLoopFuture<NSDictionary> {
+        
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
+        
+        let parameters: [String: Any] = [
+            "method" : "channel_authorize",
+            "params": [
+                [
+                    "channel_id" : channel,
+                    "secret": secret,
+                    "amount": String(amount),
+                ]
+            ]
+        ]
+        _ = HTTP.post(url: url, parameters: parameters).map { (result) in
+            let JSON = result as! NSDictionary
+            let info = JSON["result"] as! NSDictionary
+            let status = info["status"] as! String
+            if status != "error" {
+                promise.succeed(info)
+            } else {
+                let errorMessage = info["error_message"] as! String
+                let error = LedgerError.runtimeError(errorMessage)
+                promise.fail(error)
+            }
+        }.recover { (error) in
+            promise.fail(error)
+        }
+        return promise.futureResult
+    }
+    
+    public static func verifyChannelClaim(channel: String, signature: String, amount: Int, publicKey: String) -> EventLoopFuture<NSDictionary> {
+        
+        let promise = eventGroup.next().makePromise(of: NSDictionary.self)
+        
+        let parameters: [String: Any] = [
+            "method" : "channel_verify",
+            "params": [
+                [
+                    "channel_id" : channel,
+                    "signature": signature,
+                    "amount": String(amount),
+                    "public_key": publicKey
+                ]
+            ]
+        ]
+        _ = HTTP.post(url: url, parameters: parameters).map { (result) in
+            let JSON = result as! NSDictionary
+            let info = JSON["result"] as! NSDictionary
+            let status = info["status"] as! String
+            if status != "error" {
+                promise.succeed(info)
+            } else {
+                let errorMessage = info["error_message"] as! String
+                let error = LedgerError.runtimeError(errorMessage)
+                promise.fail(error)
+            }
+        }.recover { (error) in
+            promise.fail(error)
+        }
+        return promise.futureResult
+    }
 }
