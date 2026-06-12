@@ -24,7 +24,7 @@ let package = Package(
         .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", .upToNextMinor(from: "1.3.0")),
         .package(url: "https://github.com/Boilertalk/BigInt.swift.git", from: "1.0.0"),
         .package(url: "https://github.com/Flight-School/AnyCodable.git", from: "0.2.3"),
-//        .package(url: "https://github.com/apple/swift-nio.git", from: "1.0.0"),
+//        .package(url: "https://github.com/apple/swift-nio.git", from: "2.101.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/vapor/websocket-kit.git", from: "2.0.0-beta.2.3"),
     ],
